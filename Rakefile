@@ -51,7 +51,15 @@ end
 namespace :docs do
   desc "Build the YARD docs of main and every version tag into _site, like GitHub Pages publishes them"
   task :pages do
-    refs = ["main", *`git tag --list "v*" --sort=-v:refname`.split]
+    # Start from scratch, also after an interrupted run left worktrees behind
+    rm_rf %w[_site tmp/pages]
+    sh "git", "worktree", "prune"
+
+    version = ->(tag) { Gem::Version.new(tag.delete_prefix("v")) }
+    tags = `git tag --list "v*"`.split.select { Gem::Version.correct?(_1.delete_prefix("v")) }
+    tags = tags.sort_by(&version).reverse
+    refs = ["main", *tags]
+
     refs.each do |ref|
       # Without a local main branch (e.g. CI building a tag), use the remote one
       commit = ref
@@ -59,21 +67,34 @@ namespace :docs do
       worktree = File.expand_path("tmp/pages/#{ref}")
       output = File.expand_path("_site/docs/#{ref}")
 
-      sh "git", "worktree", "add", "--detach", "--force", worktree, commit
+      sh "git", "worktree", "add", "--detach", worktree, commit
       begin
-        Dir.chdir(worktree) { sh "yard", "doc", "--no-save", "--no-stats", "--output-dir", output }
+        Dir.chdir(worktree) do
+          sh "yard", "doc", "--no-save", "--no-stats", "--title", "TapeDeck #{ref}", "--output-dir", output
+        end
       ensure
         sh "git", "worktree", "remove", "--force", worktree
       end
     end
 
-    links = refs.map { %(<li><a href="#{_1}/">#{_1}</a></li>) }.join("\n")
+    # The newest release, or the newest prerelease until there is one
+    latest = tags.find { !version.call(_1).prerelease? } || tags.first || "main"
+    links = refs.map do |ref|
+      link = %(<a href="#{ref}/">#{ref}</a>)
+      link += " (latest)" if ref == latest
+      "<li>#{link}</li>"
+    end
     File.write("_site/docs/index.html", <<~HTML)
       <!DOCTYPE html>
       <html><head><meta charset="utf-8"><title>TapeDeck docs</title></head>
       <body><h1>TapeDeck docs</h1><ul>
-      #{links}
+      #{links.join("\n")}
       </ul></body></html>
+    HTML
+    mkdir_p "_site/docs/latest"
+    File.write("_site/docs/latest/index.html", <<~HTML)
+      <!DOCTYPE html>
+      <html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=../#{latest}/"></head></html>
     HTML
     File.write("_site/index.html", <<~HTML)
       <!DOCTYPE html>

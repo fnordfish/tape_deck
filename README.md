@@ -155,4 +155,4 @@ The gem is available as open source under the terms of the [MIT License](https:/
 
 [gem]: https://rubygems.org/gems/tape_deck
 [ci]: https://github.com/fnordfish/tape_deck/actions/workflows/main.yml
-[docs]: https://fnordfish.github.io/tape_deck/docs/main/
+[docs]: https://fnordfish.github.io/tape_deck/docs/latest/
