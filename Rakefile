@@ -8,7 +8,9 @@ MYSQL_ADAPTERS = %w[mysql2 trilogy].freeze
 namespace :spec do
   desc "Run the specs that need no MySQL server"
   RSpec::Core::RakeTask.new(:fake) do |t|
-    t.rspec_opts = "--tag ~mysql"
+    # Quoted, because the command runs through a shell, and where a "mysql" user exists (GitHub's runners), ~mysql
+    # expands to its home directory
+    t.rspec_opts = "--tag '~mysql'"
   end
 
   MYSQL_ADAPTERS.each do |adapter|
