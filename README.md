@@ -145,6 +145,14 @@ items:
 
 Declared foreign keys to new rows get the same placeholder. Ids of rows that existed before stay as they are. To keep the real ids of a table, use `c.keep_new_ids "shop.audit_log"`.
 
+Numbering in creation order means that creating the same rows in a different order fails verification. That's what you want if the order matters, for example when a CSV import must keep the file's order. If it doesn't, number those tables by content instead:
+
+```ruby
+c.number_by_content "shop.imported_products", "shop.imported_prices"
+```
+
+Rows are then sorted by their content, and referenced tables are numbered first, so a row's references count as part of its content. Rows with identical content are numbered in creation order.
+
 ### Views
 
 Views are left out, because the changes of the tables behind them are on the tape anyway. Include them to also notice a changed view definition:

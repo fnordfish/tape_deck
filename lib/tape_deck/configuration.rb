@@ -39,6 +39,9 @@ module TapeDeck
     # @return [Array<String>] patterns added with {#keep_new_ids}
     attr_reader :kept_new_ids
 
+    # @return [Array<String>] patterns added with {#number_by_content}
+    attr_reader :numbered_by_content
+
     def initialize
       @tape_library_dir = "spec/db_tapes"
       @databases = {}
@@ -48,6 +51,7 @@ module TapeDeck
       @excluded_columns = []
       @included_views = []
       @kept_new_ids = []
+      @numbered_by_content = []
     end
 
     # @param mode [Symbol] one of {Tape::RECORD_MODES}
@@ -110,6 +114,18 @@ module TapeDeck
     #   c.keep_new_ids "shop.audit_log"
     def keep_new_ids(*patterns)
       @kept_new_ids.concat(patterns.map(&:to_s))
+    end
+
+    # Numbers the new rows of matching tables by their content instead of the order they were created in, so creating
+    # the same rows in a different order still verifies. For example an import, whose order doesn't matter. Rows with
+    # the same content are numbered in creation order. See "New rows" in {TapeDeck}.
+    #
+    # @param patterns [Array<String>] globs on +"<database>.<table>"+
+    # @return [void]
+    # @example
+    #   c.number_by_content "shop.imported_products"
+    def number_by_content(*patterns)
+      @numbered_by_content.concat(patterns.map(&:to_s))
     end
 
     # Wraps RSpec examples tagged +:tape_deck+ in a tape. The tape is named after the example's description hierarchy

@@ -431,6 +431,51 @@ RSpec.describe TapeDeck do
       expect(tape_diff("sku").dig("shop", "skus", "inserted")).to eq([{"code" => "A-1"}])
     end
 
+    describe "numbered by content" do
+      before { described_class.configuration.number_by_content("shop.orders", "shop.items") }
+
+      # Items only differ by their order, so they can only be told apart once their orders are numbered
+      def import(*statuses) = statuses.each { order_with_items("x", status: _1) }
+
+      it "verifies the same rows created in a different order" do
+        described_class.use_tape("import") { import("a", "b", "c") }
+        move_counters
+
+        expect { described_class.use_tape("import") { import("c", "a", "b") } }.not_to raise_error
+        expect(tape_diff("import").dig("shop", "items", "inserted")).to include(
+          {"id" => "new shop.items 2", "order_id" => "new shop.orders 2", "sku" => "x"}
+        )
+      end
+
+      it "still notices changed rows" do
+        described_class.use_tape("import") { import("a", "b") }
+        move_counters
+
+        expect { described_class.use_tape("import") { import("a", "x") } }.to raise_error(TapeDeck::UnexpectedDiffError)
+      end
+
+      it "numbers rows that reference their own table" do
+        shop.create_table(:comments) do
+          primary_key :id
+          foreign_key :parent_id, :comments
+          String :body
+        end
+        described_class.configuration.number_by_content("shop.comments")
+        # Replies only differ by body once their parent ids don't count, which depend on the creation order
+        threads = ->(*names) do
+          names.each { shop[:comments].insert(body: "re #{_1}", parent_id: shop[:comments].insert(body: _1)) }
+        end
+        described_class.use_tape("threads") { threads.call("a", "b") }
+        shop[:comments].delete
+
+        expect { described_class.use_tape("threads") { threads.call("b", "a") } }.not_to raise_error
+        expect(tape_diff("threads").dig("shop", "comments", "inserted")).to include(
+          {"id" => "new shop.comments 1", "parent_id" => "new shop.comments 3", "body" => "re a"},
+          {"id" => "new shop.comments 3", "parent_id" => nil, "body" => "a"}
+        )
+      end
+    end
+
     it "keeps new ids of tables configured to keep them" do
       described_class.configuration.keep_new_ids("shop.items")
       move_counters

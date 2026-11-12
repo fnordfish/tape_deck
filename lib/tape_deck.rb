@@ -114,8 +114,9 @@ require_relative "tape_deck/recorder"
 #       order_id: new shop.orders 1
 #
 # A key is generated if it is the single, auto increment primary key of its table. Rows are numbered in creation
-# order, so creating the same rows in a different order fails verification. {Configuration#keep_new_ids} keeps the
-# real ids of some tables.
+# order, so creating the same rows in a different order fails verification. Where that order doesn't matter, like an
+# import, {Configuration#number_by_content} numbers a table's rows by their content instead.
+# {Configuration#keep_new_ids} keeps the real ids of some tables.
 #
 # == Views
 #
@@ -266,7 +267,7 @@ module TapeDeck
         include_views: configuration.included_views
       )
       filter = Filter.new(only: only, ignore: ignore)
-      new_rows = NewRows.new(recorder, keep: configuration.kept_new_ids)
+      new_rows = NewRows.new(recorder, keep: configuration.kept_new_ids, by_content: configuration.numbered_by_content)
       sessions.push(Session.new(tape, recorder, filter, on_schema_change: configuration.on_schema_change, new_rows: new_rows))
       tape
     end
