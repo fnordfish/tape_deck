@@ -63,7 +63,7 @@ The adapters live in the optional `mysql` Gemfile group (`BUNDLE_WITH=mysql`), b
 - `bundle exec yard doc` builds the docs into `doc/`, `bundle exec yard server -r` serves them while you edit
 - `bundle exec rake docs:pages` builds `main` and every `v*` tag into `_site/docs/<ref>`, from their commits, not the working tree. It empties `_site` first.
 
-The Docs workflow runs `docs:pages` on every push to `main` and every version tag, and force-pushes `_site` as a single commit to the `gh-pages` branch, published at <https://fnordfish.github.io/tape_deck/docs/> (`main/`, `v0.1.0/`, ...). `latest/` redirects to the newest release, or the newest prerelease until there is one. GitHub Pages must serve that branch (Settings, Pages, Source: "Deploy from a branch", `gh-pages`, `/ (root)`). The branch is not deployed with `actions/deploy-pages`, because that deploys a commit only once, and a release pushes `main` and the tag for the same commit.
+The Docs workflow runs `docs:pages` on every version tag, and on pushes to `main` that change a file the docs are built from (the `paths` in `.github/workflows/pages.yml`, keep it in sync with `.yardopts`), and force-pushes `_site` as a single commit to the `gh-pages` branch, published at <https://fnordfish.github.io/tape_deck/docs/> (`main/`, `v0.1.0/`, ...). `latest/` redirects to the newest release, or the newest prerelease until there is one. GitHub Pages must serve that branch (Settings, Pages, Source: "Deploy from a branch", `gh-pages`, `/ (root)`). The branch is not deployed with `actions/deploy-pages`, because that deploys a commit only once, and a release pushes `main` and the tag for the same commit.
 
 ## Releasing
 

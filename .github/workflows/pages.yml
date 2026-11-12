@@ -4,6 +4,18 @@ on:
   push:
     branches:
       - main
+    # Everything the docs are built from. Keep in sync with .yardopts and the docs:pages task.
+    # Tag pushes ignore this filter, so every release publishes its docs.
+    paths:
+      - 'lib/**'
+      - README.md
+      - CHANGELOG.md
+      - DEVELOPMENT.md
+      - LICENSE.txt
+      - .yardopts
+      - Rakefile
+      - Gemfile
+      - .github/workflows/pages.yml
     tags:
       - 'v*'
   workflow_dispatch:
