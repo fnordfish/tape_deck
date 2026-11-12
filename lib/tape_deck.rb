@@ -15,9 +15,10 @@ require_relative "tape_deck/tape"
 require_relative "tape_deck/patterns"
 require_relative "tape_deck/filter"
 require_relative "tape_deck/session"
+require_relative "tape_deck/adapters"
 require_relative "tape_deck/recorder"
 
-# Records what a block of code changes in several MySQL databases, and checks later runs against that recording.
+# Records what a block of code changes in several databases, and checks later runs against that recording.
 # API, naming and flow inspired by the VCR gem.
 #
 # == Tapes

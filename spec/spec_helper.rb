@@ -4,7 +4,8 @@ require "tape_deck"
 require "tmpdir"
 require "zlib"
 
-require_relative "support/fake_mysql"
+require_relative "support/databases"
+require_relative "support/server_examples"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
@@ -20,10 +21,11 @@ RSpec.configure do |config|
     c.syntax = :expect
   end
 
-  config.include FakeMySQL
+  config.include Databases
 
   # The MySQL integration specs need a server, see .devcontainer/compose.yml
   config.filter_run_excluding :mysql unless ENV["TAPE_DECK_MYSQL_URL"]
+  config.filter_run_excluding :postgres unless ENV["TAPE_DECK_POSTGRES_URL"]
 
   config.around do |example|
     Dir.mktmpdir("tape_deck") do |dir|

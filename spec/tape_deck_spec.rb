@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 RSpec.describe TapeDeck do
-  let(:shop) { fake_mysql("shop") }
-  let(:billing) { fake_mysql("billing") }
+  let(:shop) { sqlite_db }
+  let(:billing) { sqlite_db }
 
   before do
     shop.create_table(:orders) do

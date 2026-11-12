@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.summary = "Records what an action changes in your databases, and checks later runs against it."
   spec.description = "Snapshots your databases around an action and stores the row-level diff as a YAML tape. " \
     "Later runs of the same action are verified against the tape, so you notice when a change or update " \
-    "alters what gets written. VCR-style API, works with Sequel and MySQL."
+    "alters what gets written. VCR-style API, works with Sequel and MySQL, MariaDB, PostgreSQL or SQLite."
   spec.homepage = "https://github.com/fnordfish/tape_deck"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.2.0"

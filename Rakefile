@@ -6,11 +6,11 @@ require "rspec/core/rake_task"
 MYSQL_ADAPTERS = %w[mysql2 trilogy].freeze
 
 namespace :spec do
-  desc "Run the specs that need no MySQL server"
-  RSpec::Core::RakeTask.new(:fake) do |t|
+  desc "Run the specs that need no database server, on SQLite"
+  RSpec::Core::RakeTask.new(:sqlite) do |t|
     # Quoted, because the command runs through a shell, and where a "mysql" user exists (GitHub's runners), ~mysql
     # expands to its home directory
-    t.rspec_opts = "--tag '~mysql'"
+    t.rspec_opts = "--tag '~mysql' --tag '~postgres'"
   end
 
   MYSQL_ADAPTERS.each do |adapter|
@@ -21,15 +21,26 @@ namespace :spec do
       sh({"TAPE_DECK_MYSQL_URL" => adapter_url}, "rspec", "--tag", "mysql")
     end
   end
+
+  desc "Run the PostgreSQL specs, needs TAPE_DECK_POSTGRES_URL"
+  task :postgres do
+    ENV.fetch("TAPE_DECK_POSTGRES_URL") { abort "Set TAPE_DECK_POSTGRES_URL, see DEVELOPMENT.md" }
+    sh "rspec", "--tag", "postgres"
+  end
 end
 
-desc "Run all specs, the MySQL ones with every adapter if TAPE_DECK_MYSQL_URL is set"
+desc "Run all specs, the database server ones if their URL is set (MySQL with every adapter)"
 task :spec do
-  Rake::Task["spec:fake"].invoke
+  Rake::Task["spec:sqlite"].invoke
   if ENV["TAPE_DECK_MYSQL_URL"]
     MYSQL_ADAPTERS.each { Rake::Task["spec:#{_1}"].invoke }
   else
     warn "Skipping the MySQL specs, TAPE_DECK_MYSQL_URL is not set"
+  end
+  if ENV["TAPE_DECK_POSTGRES_URL"]
+    Rake::Task["spec:postgres"].invoke
+  else
+    warn "Skipping the PostgreSQL specs, TAPE_DECK_POSTGRES_URL is not set"
   end
 end
 

@@ -10,6 +10,7 @@
 | `Configuration` | Plain settings: `tape_library_dir`, `databases`, `default_record_mode`, `on_schema_change`, exclude patterns, RSpec hook |
 | `Tape` | File-like. Knows its name, path and mode (`recording?` / `verifying?`), can `read` and `write(diff, recorded:)`. Never touches a database |
 | `Recorder` | Observes databases: `snapshot` and `diff`. Knows nothing about tapes or configuration |
+| `Adapters` | The database specific parts of a snapshot: checksums to skip unchanged tables, and turning column values into plain YAML values. Picked by `db.database_type`, `Adapters::Base` for other databases |
 | `Filter` | Narrows a diff to what one use of a tape wants compared (`only:` / `ignore:`). `@api private` |
 | `Session` | One run of one tape: "before" snapshot on creation, `finish` captures the diff and records or verifies. `@api private` |
 
@@ -27,11 +28,13 @@ Decisions made on purpose. Please don't undo them without discussing first:
   - A tape must cover the run that verifies it: the watched databases are a subset of the recorded ones, and everything the tape left out is still excluded under the current rules. What is excluded now but on the tape is dropped from both sides before comparing.
   - Schema changes: the recorded patterns, applied to the current schema, must resolve to the recorded names. A difference means a matching table or column was added or removed. `on_schema_change` decides between error, warning and nothing.
 - **Primary key columns are never excluded**, even if a pattern matches, because rows are matched by them.
-- **Snapshots reuse unchanged tables.** `CHECKSUM TABLE` runs before and after. A table whose checksum is unchanged reuses the first snapshot object, and `diff` skips it by identity (`equal?`).
+- **Snapshots reuse unchanged tables.** The adapter computes a checksum per table before and after: `CHECKSUM TABLE` on MySQL, the row count plus a sum of row hashes on PostgreSQL. A table whose checksum is unchanged reuses the first snapshot object, and `diff` skips it by identity (`equal?`). Without a checksum (SQLite, other databases), a table is read on every snapshot.
 - **Tables without a primary key** are compared as a multiset of rows (inserted / deleted only).
+- **Unknown value types become plain values.** Values from Sequel extensions like `pg_json` or `pg_array` are hash-like or array-like objects, which `YAML.safe_load` can't read back. `Adapters::Base#serialize` turns them into plain Hashes and Arrays, and any other unknown type into a String.
+- **PostgreSQL sees the search path only**, like `db.tables`, so names stay `"<database>.<table>"` for every database.
 - **Views are opt-in** (`include_views`), because table diffs already cover their data. Included views are always read in full (no checksum tells whether a view changed) and compared as a multiset. The tape stores the include patterns and the resolved views per database. A view no longer included is not compared, one included by changed rules raises `IncompatibleTapeError`, one added by a schema change is reported like any schema change and not compared.
 - **Binary values**: valid UTF-8 becomes a plain UTF-8 string, anything else is hex up to 64 bytes and a `sha256:` digest above that. Always a plain `String`, never a subclass, so `YAML.safe_load` can read the tape.
-- **TIME columns** are stored as a time of day, recognized by their database type (`Recorder::TIME_DB_TYPE`), because Sequel types `time` as `:time` but not `time(6)`. `mysql2` returns them as a `Time` on 2000-01-01, which would otherwise be stored as a timestamp.
+- **TIME columns** are stored as a time of day, recognized by their database type (`Adapters::Base::TIME_DB_TYPE`), because Sequel types `time` as `:time` but not `time(6)`. `mysql2` returns them as a `Time` on 2000-01-01, which would otherwise be stored as a timestamp.
 
 ## Code style
 
@@ -43,21 +46,24 @@ Decisions made on purpose. Please don't undo them without discussing first:
 
 ## Testing
 
-- `bundle exec rake spec` runs everything: the fake specs, then the MySQL specs once per adapter if `TAPE_DECK_MYSQL_URL` is set
-- `bundle exec rake spec:fake` needs no server. In-memory SQLite through Sequel, `spec/support/fake_mysql.rb` answers `CHECKSUM TABLE`, everything else is real Sequel.
+- `bundle exec rake spec` runs everything: the SQLite specs, then the MySQL specs once per adapter if `TAPE_DECK_MYSQL_URL` is set, and the PostgreSQL specs if `TAPE_DECK_POSTGRES_URL` is set
+- `bundle exec rake spec:sqlite` needs no server. In-memory SQLite through Sequel, using the real SQLite adapter.
 - `bundle exec rake spec:mysql2` / `spec:trilogy` run `spec/integration/mysql_spec.rb` (tagged `:mysql`) with that adapter
+- `bundle exec rake spec:postgres` runs `spec/integration/postgres_spec.rb` (tagged `:postgres`)
 
-`TAPE_DECK_MYSQL_URL` is a server URL without a database, e.g. `mysql2://root:tape_deck@mysql`. The adapter tasks replace its scheme with their own. The MySQL specs create and drop `tape_deck_shop` and `tape_deck_billing`.
+Both server specs include the shared examples in `spec/support/server_examples.rb`, and add their own value types. The adapters' checksum queries are also covered by the SQLite run, through Sequel's mock databases (`spec/tape_deck/adapters_spec.rb`).
 
-The devcontainer (`.devcontainer/`) has Ruby and MySQL 8.4, with `TAPE_DECK_MYSQL_URL` already set. Without VS Code:
+`TAPE_DECK_MYSQL_URL` and `TAPE_DECK_POSTGRES_URL` are server URLs without a database, e.g. `mysql2://root:tape_deck@mysql` and `postgres://postgres:tape_deck@postgres`. The MySQL adapter tasks replace the scheme with their own. The server specs create and drop `tape_deck_shop` and `tape_deck_billing`.
+
+The devcontainer (`.devcontainer/`) has Ruby, MySQL 8.4 and PostgreSQL 18, with both URLs already set. Without VS Code:
 
     docker compose -f .devcontainer/compose.yml run --rm app sh -c "bundle install && bundle exec rake spec"
 
-The server is MySQL 8.4 by default. Set `MYSQL_IMAGE` for another one, e.g. `MYSQL_IMAGE=mariadb:11.4`. Ruby is 4.0, set `RUBY_IMAGE` for another one, e.g. `RUBY_IMAGE=ruby:3.2`.
+Set `MYSQL_IMAGE` for another MySQL server, e.g. `MYSQL_IMAGE=mariadb:11.4`, `POSTGRES_IMAGE` for another PostgreSQL, e.g. `POSTGRES_IMAGE=postgres:15`, and `RUBY_IMAGE` for another Ruby, e.g. `RUBY_IMAGE=ruby:3.2`.
 
-CI runs the default task on every supported Ruby and on Ruby head. It runs `spec:mysql2` and `spec:trilogy` in the devcontainer setup, against MySQL 8.4 and MariaDB 11.4, on the oldest and newest supported Ruby.
+CI runs the default task on every supported Ruby and on Ruby head. In the devcontainer setup, on the oldest and newest supported Ruby, it runs `spec:mysql2` and `spec:trilogy` against MySQL 8.4 and MariaDB 11.4, and `spec:postgres` against PostgreSQL 15 and 18.
 
-The adapters live in the optional `mysql` Gemfile group (`BUNDLE_WITH=mysql`), because `mysql2` needs the MySQL client library to install.
+The database adapters live in the optional `mysql` and `postgres` Gemfile groups (`BUNDLE_WITH=mysql:postgres`), because `mysql2` and `pg` may need client libraries to install.
 
 ## Docs
 
@@ -77,10 +83,11 @@ Releases go to rubygems.org and to the `@fnordfish` namespace on [gem.coop](http
 
 ## Tested against
 
-Ruby 3.2 to 4.0. MySQL 8.4 and MariaDB 11.4, each with the `mysql2` and `trilogy` adapters, on Ruby 3.2 and 4.0. Other servers and versions may work, but are untested.
+Ruby 3.2 to 4.0. On Ruby 3.2 and 4.0: MySQL 8.4 and MariaDB 11.4, each with the `mysql2` and `trilogy` adapters, and PostgreSQL 15 and 18. SQLite with every supported Ruby. Other servers and versions may work, but are untested.
 
 ## Roadmap and open questions
 
 - Replace new auto increment ids with stable placeholders, so tapes don't depend on the starting state
 - Binary data that happens to be valid UTF-8 (short hashes, UUIDs) is shown as text
-- `CHECKSUM TABLE` scans the whole table. Fine for test databases, worth measuring for large ones.
+- Checksums scan the whole table (`CHECKSUM TABLE`, the PostgreSQL checksum query). Fine for test databases, worth measuring for large ones.
+- PostgreSQL schemas other than the search path

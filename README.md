@@ -15,7 +15,7 @@ You run a command or request against a black-box project. TapeDeck snapshots all
 
 API, naming and flow are modelled on [VCR](https://github.com/vcr/vcr), with one big difference: a tape is never played back. The action always runs for real, and the tape is only what the result is compared against.
 
-Works with [Sequel](https://sequel.jeremyevans.net) and MySQL or MariaDB (it uses `CHECKSUM TABLE` to skip unchanged tables). Tested with MySQL 8.4 and MariaDB 11.4, using the `mysql2` or `trilogy` adapter. Needs Ruby 3.2 or newer.
+Works with [Sequel](https://sequel.jeremyevans.net) and MySQL, MariaDB, PostgreSQL or SQLite. Needs Ruby 3.2 or newer.
 
 ## Installation
 
@@ -139,6 +139,18 @@ c.include_views "shop.order_totals", "billing.*"
 
 Included views are read in full on every snapshot, and compared as a multiset of rows, because they have no primary key. `exclude_columns` applies to their columns.
 
+### Databases
+
+| Database | Tested with | Unchanged tables |
+| --- | --- | --- |
+| MySQL, MariaDB | MySQL 8.4 and MariaDB 11.4, `mysql2` and `trilogy` adapters | skipped, using `CHECKSUM TABLE` |
+| PostgreSQL | PostgreSQL 15 and 18, `pg` adapter | skipped, using a checksum computed on the server |
+| SQLite | `sqlite3` adapter | read again on every snapshot |
+
+Telling unchanged tables apart still scans them on the server, but saves reading their rows. Other databases Sequel supports should work too, and read every table on every snapshot.
+
+PostgreSQL tables are seen through the search path, like Sequel's `db.tables` does, usually the `public` schema. Tables in other schemas are not recorded.
+
 ### Things to know
 
 * Your databases need the same starting state on every run. Auto increment ids and existing rows end up on the tape.
@@ -151,7 +163,7 @@ The [API docs][docs] have the full story.
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
 
-The default specs run against in-memory SQLite databases that fake MySQL's `CHECKSUM TABLE`, so you don't need a MySQL server. For the real thing, open the devcontainer, it comes with MySQL.
+The default specs run against in-memory SQLite databases, so you don't need a database server. For MySQL, MariaDB and PostgreSQL, open the devcontainer, it comes with both servers.
 
 Please also see [DEVELOPMENT.md](DEVELOPMENT.md) for design decisions and open questions.
 

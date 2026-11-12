@@ -17,7 +17,7 @@ RSpec.describe TapeDeck::Configuration do
   end
 
   describe "#configure_rspec_metadata!" do
-    let(:db) { fake_mysql("shop") }
+    let(:db) { sqlite_db }
     let(:tape_dir) { TapeDeck.configuration.tape_library_dir }
 
     before do

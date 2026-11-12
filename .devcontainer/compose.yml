@@ -9,11 +9,14 @@ services:
       - ..:/workspaces/tape_deck
       - bundle:/usr/local/bundle
     environment:
-      BUNDLE_WITH: mysql
+      BUNDLE_WITH: mysql:postgres
       TZ: UTC
       TAPE_DECK_MYSQL_URL: ${TAPE_DECK_MYSQL_URL:-mysql2://root:tape_deck@mysql}
+      TAPE_DECK_POSTGRES_URL: ${TAPE_DECK_POSTGRES_URL:-postgres://postgres:tape_deck@postgres}
     depends_on:
       mysql:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
 
   mysql:
@@ -25,6 +28,19 @@ services:
     healthcheck:
       # MariaDB images only have mariadb-admin
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -ptape_deck || mariadb-admin ping -h 127.0.0.1 -ptape_deck"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:18}
+    environment:
+      POSTGRES_PASSWORD: tape_deck
+    tmpfs:
+      # Covers the data directory of all image versions (18 moved it into a version subdirectory)
+      - /var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 2s
       timeout: 5s
       retries: 30

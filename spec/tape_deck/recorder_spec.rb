@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe TapeDeck::Recorder do
-  let(:db) { fake_mysql("shop") }
+  let(:db) { sqlite_db }
   let(:recorder) { described_class.new({"shop" => db}) }
 
   before do
@@ -55,6 +55,7 @@ RSpec.describe TapeDeck::Recorder do
   end
 
   it "reuses the snapshot of tables whose checksum is unchanged" do
+    allow(TapeDeck::Adapters).to receive(:for) { ChecksummingSQLite.new(_1) }
     before = recorder.snapshot
     db[:orders].where(id: 1).update(status: "paid")
     after = recorder.snapshot(previous: before)

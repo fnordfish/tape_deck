@@ -67,3 +67,30 @@ jobs:
       - name: Stop MySQL
         if: always()
         run: docker compose -f .devcontainer/compose.yml down --volumes
+
+  postgres:
+    runs-on: ubuntu-latest
+    name: ${{ matrix.server }} (Ruby ${{ matrix.ruby }})
+    strategy:
+      fail-fast: false
+      matrix:
+        # Oldest and newest supported Ruby and PostgreSQL
+        ruby:
+          - '3.2'
+          - '4.0'
+        server:
+          - postgres:15
+          - postgres:18
+    env:
+      RUBY_IMAGE: ruby:${{ matrix.ruby }}
+      POSTGRES_IMAGE: ${{ matrix.server }}
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Run the specs against PostgreSQL
+        run: docker compose -f .devcontainer/compose.yml run --rm app sh -c "bundle install && bundle exec rake spec:postgres"
+      - name: Stop PostgreSQL
+        if: always()
+        run: docker compose -f .devcontainer/compose.yml down --volumes

@@ -4,7 +4,7 @@ module TapeDeck
   # Snapshot of one table.
   #
   # @!attribute [r] checksum
-  #   @return [Integer, nil] result of +CHECKSUM TABLE+
+  #   @return [Object, nil] checksum from the adapter, see {Adapters::Base#checksums}
   # @!attribute [r] pk
   #   @return [Array<String>] primary key columns, empty if the table has none
   # @!attribute [r] rows
@@ -13,13 +13,9 @@ module TapeDeck
   # @api private
   TableSnap = Data.define(:checksum, :pk, :rows)
 
-  # Takes snapshots of all configured databases and diffs them. Used by {Session}, but usable on its own when you don't
-  # need tape files.
+  # Takes snapshots of all configured databases and diffs them. The database specific parts are in {Adapters}. Used by
+  # {Session}, but usable on its own when you don't need tape files.
   class Recorder
-    # Database types of TIME columns, with or without fractional seconds. Sequel only types +time+ as +:time+, not
-    # +time(6)+.
-    TIME_DB_TYPE = /\Atime\b/i
-
     # @return [Array<String>] see {Configuration#exclude_tables}
     attr_reader :excluded_tables
 
@@ -35,6 +31,7 @@ module TapeDeck
     # @param include_views [Array<String>] see {Configuration#include_views}
     def initialize(dbs, exclude_tables: [], exclude_columns: [], include_views: [])
       @dbs = dbs
+      @adapters = dbs.transform_values { Adapters.for(_1) }
       @excluded_tables = exclude_tables
       @excluded_columns = exclude_columns
       @included_views = include_views
@@ -48,8 +45,9 @@ module TapeDeck
       diff(before, snapshot(previous: before))
     end
 
-    # Reads all tables that are not excluded, and all included views. With +previous:+, tables whose +CHECKSUM TABLE+
-    # is unchanged reuse the previous snapshot, so only changed tables are read again. Views are always read again.
+    # Reads all tables that are not excluded, and all included views. With +previous:+, tables whose checksum is
+    # unchanged reuse the previous snapshot, so only changed tables are read again. Views and tables without a
+    # checksum are always read again.
     #
     # @param previous [Hash, nil] an earlier result of this method
     # @return [Hash{String => Hash{String => TableSnap}}]
@@ -145,29 +143,24 @@ module TapeDeck
       end
     end
 
-    # @return [Hash{String => Integer, nil}] table name -> checksum
+    # @return [Hash{String => Object, nil}] table name -> checksum, for the tables that are not excluded
     def checksums(db, name)
       tables = db.tables.map(&:to_s).sort.reject { excluded?(name, _1) }
-      return {} if tables.empty?
-
-      list = tables.map { db.literal(Sequel.identifier(_1)) }.join(", ")
-      db.fetch("CHECKSUM TABLE #{list}").to_h do |r|
-        _db_name, table = r[:Table].split(".", 2) # MySQL reports "<db>.<table>"
-        [table, r[:Checksum]]
-      end
+      @adapters.fetch(name).checksums(tables)
     end
 
     # Views have no primary key. Whatever the schema says, their rows are compared as a multiset.
     #
     # @return [TableSnap]
     def dump(db, name, table, sum, view: false)
+      adapter = @adapters.fetch(name)
       schema = db.schema(table.to_sym)
       pk = if view
         []
       else
         schema.select { |_, i| i[:primary_key] }.map(&:first)
       end
-      types = schema.to_h { |col, i| [col, column_type(i)] }
+      columns = schema.to_h
 
       drop = excluded_column_names(name, table, schema)
 
@@ -176,24 +169,14 @@ module TapeDeck
 
       rows = {}
       ds.each do |r|
-        row = r.except(*drop).to_h { |col, v| [col.to_s, serialize(v, types[col])] }
+        row = r.except(*drop).to_h { |col, v| [col.to_s, adapter.serialize(v, columns.fetch(col, {}))] }
         if pk.empty?
           rows[row] = rows.fetch(row, 0) + 1
         else
-          rows[pk.map { serialize(r[_1], types[_1]) }] = row
+          rows[pk.map { adapter.serialize(r[_1], columns[_1]) }] = row
         end
       end
       TableSnap.new(checksum: sum, pk: pk.map(&:to_s), rows: rows)
-    end
-
-    # @param info [Hash] column info from +db.schema+
-    # @return [Symbol, nil] Sequel's column type, +:time+ for all TIME columns, see {TIME_DB_TYPE}
-    def column_type(info)
-      if TIME_DB_TYPE.match?(info[:db_type].to_s)
-        :time
-      else
-        info[:type]
-      end
     end
 
     def empty_like(snap) = TableSnap.new(checksum: nil, pk: snap.pk, rows: {})
@@ -240,53 +223,5 @@ module TapeDeck
 
     def sort_rows(rows) = rows.sort_by(&:inspect)
     def compact(h) = h.reject { |_, v| v.empty? }
-
-    # Converts a column value to a YAML-stable scalar. +type+ is the column type from +db.schema+.
-    def serialize(v, type = nil)
-      case v
-      when String then maybe_utf8(v)
-      when BigDecimal then v.to_s("F")
-      when Sequel::SQLTime then time_of_day(v)
-      when Time then timestamp(v, type)
-      when Date then v.iso8601
-      else v # Integer, Float, true/false, nil
-      end
-    end
-
-    # mysql2 returns TIME columns as a +Time+ on 2000-01-01, not as +Sequel::SQLTime+. Those keep their local time of
-    # day, because converting them to UTC would shift the hour.
-    def timestamp(v, type)
-      if type == :time
-        time_of_day(v)
-      else
-        v.utc.iso8601(6)
-      end
-    end
-
-    def time_of_day(v) = v.strftime("%H:%M:%S.%6N")
-
-    # Small binaries encode as hex. Large ones are shown as a digest so the YAML stays small.
-    def bin(v)
-      if v.bytesize <= 64
-        "0x#{v.unpack1("H*")}"
-      else
-        "sha256:#{Digest::SHA256.hexdigest(v)}"
-      end
-    end
-
-    # BINARY, VARBINARY and BLOB columns arrive as ASCII-8BIT strings (or Sequel::SQL::Blob, depending on the adapter).
-    # Ones that hold valid UTF-8 become plain UTF-8 strings, because YAML would otherwise store them as base64
-    # (+!binary+). Everything else goes through {#bin}.
-    def maybe_utf8(v)
-      binary = v.encoding == Encoding::BINARY || v.is_a?(Sequel::SQL::Blob)
-      return v unless binary
-
-      utf8 = String.new(v, encoding: Encoding::UTF_8)
-      if utf8.valid_encoding?
-        utf8
-      else
-        bin(v)
-      end
-    end
   end
 end
