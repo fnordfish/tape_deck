@@ -5,6 +5,7 @@
 /doc/
 /pkg/
 /_site/
+/Gemfile.lock
 /spec/reports/
 /tmp/
 /priv/
