@@ -34,10 +34,12 @@ require_relative "tape_deck/recorder"
 # statements that caused it or their order, so INSERT/UPDATE/DELETE statements generated from it can go wrong in many
 # ways: foreign key constraints, generated columns, triggers.
 #
-# Next to the diff, a tape stores what was recorded: the recording rules, the watched databases, and the tables and
-# columns the rules left out of each and the views they included.
+# Next to the diff, a tape stores everything that shaped it: the TapeDeck version that recorded it, the recording
+# rules, the watched databases, and per database the tables and columns the rules left out and the views they
+# included. Empty lists are left out of the file.
 #
 #   recorded:
+#     tape_deck: 0.1.0
 #     exclude_tables: [shop.sessions]
 #     exclude_columns: ["*.created_at"]
 #     include_views: [shop.order_totals]
@@ -121,6 +123,10 @@ require_relative "tape_deck/recorder"
 # References across databases, and ones without a foreign key, need {Configuration#references_to}. Keys that are
 # generated, but not auto increment, like UUIDs, need {Configuration#generated_keys}. Those have no creation order, so
 # their rows are numbered by content.
+#
+# The numbering rules are stored on the tape, and verifying uses them, not the current configuration. Numbering only
+# changes how ids are written, so a tape keeps verifying the way it was recorded. New rules apply to tapes recorded
+# afterwards.
 #
 # == Views
 #

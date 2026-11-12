@@ -22,6 +22,29 @@ module TapeDeck
       @references = references
     end
 
+    # @param recorder [Recorder]
+    # @param recorded [Hash] the +recorded+ section of a tape, see {Tape#read}
+    # @return [NewRows] numbering with the rules the tape was recorded with
+    def self.recorded_with(recorder, recorded)
+      new(
+        recorder,
+        keep: recorded.fetch("keep_new_ids"),
+        by_content: recorded.fetch("number_by_content"),
+        generated_keys: recorded.fetch("generated_keys"),
+        references: recorded.fetch("references_to")
+      )
+    end
+
+    # @return [Hash] the rules, as stored in the +recorded+ section of a tape
+    def rules
+      {
+        "keep_new_ids" => @keep,
+        "number_by_content" => @by_content,
+        "generated_keys" => @generated_keys,
+        "references_to" => @references
+      }
+    end
+
     # @param diff [Hash] a diff as stored on a tape
     # @return [Hash] the diff with placeholders
     def apply(diff)

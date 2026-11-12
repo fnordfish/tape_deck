@@ -6,6 +6,10 @@ RSpec.describe TapeDeck::Tape do
       "exclude_tables" => ["shop.sessions"],
       "exclude_columns" => ["*.created_at"],
       "include_views" => ["shop.order_totals"],
+      "keep_new_ids" => ["shop.audit_log"],
+      "number_by_content" => ["shop.imports"],
+      "generated_keys" => ["shop.tokens.id"],
+      "references_to" => {"shop.orders" => ["billing.invoices.order_id", "*.last_order_id"]},
       "databases" => {
         "shop" => {"excluded" => ["orders.created_at", "sessions"], "views" => ["order_totals"]},
         "billing" => {"excluded" => [], "views" => []}
@@ -13,7 +17,7 @@ RSpec.describe TapeDeck::Tape do
     }
   end
 
-  def write_tape(name, diff = {}, recorded: TapeDeck::Tape::RULES.to_h { [_1, []] }.merge("databases" => {}))
+  def write_tape(name, diff = {}, recorded: TapeDeck::Tape::RULES.to_h { [_1, []] }.merge("references_to" => {}, "databases" => {}))
     described_class.new(name, record: :overwrite).write(diff, recorded: recorded)
   end
 
@@ -112,7 +116,7 @@ RSpec.describe TapeDeck::Tape do
     diff = {"shop" => {"orders" => {"inserted" => [{"id" => 1, "note" => "a: b"}]}}}
     write_tape("a/b/c", diff, recorded: recorded)
 
-    expect(described_class.new("a/b/c").read).to eq("recorded" => recorded, "diff" => diff)
+    expect(described_class.new("a/b/c").read).to eq("recorded" => {"tape_deck" => TapeDeck::VERSION, **recorded}, "diff" => diff)
   end
 
   it "writes lists on one line, and leaves out empty ones" do
@@ -121,9 +125,15 @@ RSpec.describe TapeDeck::Tape do
     expect(File.read(described_class.new("t").file)).to eq(<<~YAML)
       ---
       recorded:
+        tape_deck: #{TapeDeck::VERSION}
         exclude_tables: [shop.sessions]
         exclude_columns: ["*.created_at"]
         include_views: [shop.order_totals]
+        keep_new_ids: [shop.audit_log]
+        number_by_content: [shop.imports]
+        generated_keys: [shop.tokens.id]
+        references_to:
+          shop.orders: [billing.invoices.order_id, "*.last_order_id"]
         databases:
           shop:
             excluded: [orders.created_at, sessions]
@@ -134,7 +144,7 @@ RSpec.describe TapeDeck::Tape do
   end
 
   it "reads a tape without recording rules" do
-    no_rules = TapeDeck::Tape::RULES.to_h { [_1, []] }
+    no_rules = TapeDeck::Tape::RULES.to_h { [_1, []] }.merge("references_to" => {})
     write_tape("t", {}, recorded: recorded.merge(no_rules))
 
     expect(described_class.new("t").read.fetch("recorded")).to include(no_rules)

@@ -4,10 +4,12 @@ module TapeDeck
   # One recorded diff, stored as a YAML file. Like a +File+, a tape knows where it lives, whether it is there to be
   # recorded or verified, and how to read and write itself. It never touches a database.
   #
-  # Next to the diff, a tape stores what was recorded: the recording rules, the watched databases, and per database the
-  # tables and columns the rules left out and the views they included. Empty lists are left out of the file.
+  # Next to the diff, a tape stores everything that shaped it: the TapeDeck version that recorded it, the recording
+  # rules, the watched databases, and per database the tables and columns the rules left out and the views they
+  # included. Empty lists are left out of the file.
   #
   #   recorded:
+  #     tape_deck: 0.1.0
   #     exclude_tables: [shop.sessions]
   #     exclude_columns: ["*.created_at"]
   #     include_views: [shop.order_totals]
@@ -21,11 +23,11 @@ module TapeDeck
   #       orders:
   #         inserted: [...]
   class Tape
-    # Lists in the +recorded+ section of a tape file, written on one line.
-    RECORDED_LISTS = %w[exclude_tables exclude_columns include_views excluded views].freeze
+    # Recording rules at the top of the +recorded+ section that are lists of patterns.
+    RULES = %w[exclude_tables exclude_columns include_views keep_new_ids number_by_content generated_keys].freeze
 
-    # Recording rules at the top of the +recorded+ section.
-    RULES = %w[exclude_tables exclude_columns include_views].freeze
+    # Recording rules at the top of the +recorded+ section that map a table to patterns.
+    TABLE_RULES = %w[references_to].freeze
 
     # Lists per database in the +recorded+ section.
     DATABASE_LISTS = %w[excluded views].freeze
@@ -58,21 +60,16 @@ module TapeDeck
       raise ArgumentError, "invalid record mode #{mode.inspect}, use one of #{RECORD_MODES.inspect}"
     end
 
-    # Like {.serialize}, but writes the {RECORDED_LISTS} on one line, so the +recorded+ section stays short.
+    # Like {.serialize}, but writes the lists of the +recorded+ section on one line, so it stays short.
     #
     # @param content [Hash] see {#read}
     # @return [String] the YAML stored in a tape file
     def self.dump(content)
       tree = Psych::Visitors::YAMLTree.create(line_width: -1)
       tree << content
-      tree.tree.each do |node|
-        next unless node.is_a?(Psych::Nodes::Mapping)
-
-        node.children.each_slice(2) do |key, value|
-          recorded_list = RECORDED_LISTS.include?(key.value) && value.is_a?(Psych::Nodes::Sequence)
-          value.style = Psych::Nodes::Sequence::FLOW if recorded_list
-        end
-      end
+      root = tree.tree.children.first.children.first
+      recorded = root.children.each_slice(2).find { |key, _| key.value == "recorded" }&.last
+      recorded&.each { _1.style = Psych::Nodes::Sequence::FLOW if _1.is_a?(Psych::Nodes::Sequence) }
       tree.tree.yaml(nil, line_width: -1)
     end
 
@@ -115,18 +112,21 @@ module TapeDeck
       @content ||= load
     end
 
+    # Also stores the version of TapeDeck that recorded the tape.
+    #
     # @param diff [Hash] the diff to store in the tape file, replacing its content
-    # @param recorded [Hash] the {RULES}, and +"databases"+: what they resolved to in each database, as returned by
-    #   {Recorder#resolve}
+    # @param recorded [Hash] the {RULES} and {TABLE_RULES}, and +"databases"+: what they resolved to in each
+    #   database, as returned by {Recorder#resolve}
     # @return [void]
     def write(diff, recorded:)
       databases = recorded.fetch("databases").transform_values do |lists|
         non_empty = lists.slice(*DATABASE_LISTS).reject { |_, list| list.empty? }
         non_empty unless non_empty.empty?
       end
-      rules = recorded.slice(*RULES).reject { |_, list| list.empty? }
+      rules = recorded.slice(*RULES, *TABLE_RULES).reject { |_, rule| rule.empty? }
+      content = {"recorded" => {"tape_deck" => VERSION, **rules, "databases" => databases}, "diff" => diff}
       FileUtils.mkdir_p(File.dirname(file))
-      File.write(file, self.class.dump("recorded" => {**rules, "databases" => databases}, "diff" => diff))
+      File.write(file, self.class.dump(content))
       @content = nil
     end
 
@@ -141,7 +141,11 @@ module TapeDeck
         DATABASE_LISTS.to_h { [_1, Array(lists&.dig(_1))] }
       end
       rules = RULES.to_h { [_1, Array(recorded[_1])] }
-      {"recorded" => {**rules, "databases" => databases}, "diff" => content["diff"]}
+      table_rules = TABLE_RULES.to_h { [_1, recorded[_1].to_h.transform_values { |patterns| Array(patterns) }] }
+      {
+        "recorded" => {"tape_deck" => recorded["tape_deck"], **rules, **table_rules, "databases" => databases},
+        "diff" => content["diff"]
+      }
     rescue Psych::Exception => e
       raise TapeLoadingError, "cannot load tape #{file}: #{e.message}"
     end

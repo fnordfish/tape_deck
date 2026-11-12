@@ -60,6 +60,7 @@ The first run writes `spec/db_tapes/checkout/creates_order.yml`:
 
 ```yaml
 recorded:
+  tape_deck: 0.1.0.beta1
   exclude_tables: [shop.sessions, "*.schema_migrations"]
   exclude_columns: ["*.created_at", "*.updated_at"]
   databases:
@@ -88,7 +89,7 @@ diff:
           - 9
 ```
 
-`recorded` holds the exclude rules, the databases the tape watched, and what the rules left out of each.
+`recorded` holds everything that shaped the tape: the TapeDeck version, the recording rules, the databases the tape watched, and what the rules left out of each.
 
 Every later run verifies against it and raises `TapeDeck::UnexpectedDiffError` with a diff when the changes differ.
 
@@ -161,6 +162,8 @@ c.generated_keys "shop.tokens.id"
 ```
 
 UUIDs have no creation order, so those rows are always numbered by content.
+
+These numbering rules are stored on each tape, and verifying uses the tape's rules, not your current configuration. Changing them only affects tapes you record afterwards.
 
 ### Views
 

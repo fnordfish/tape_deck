@@ -47,6 +47,7 @@ RSpec.describe TapeDeck do
       expect(File.read(tape_file("checkout"))).to eq(<<~YAML)
         ---
         recorded:
+          tape_deck: #{TapeDeck::VERSION}
           databases:
             shop:
             billing:
@@ -192,6 +193,7 @@ RSpec.describe TapeDeck do
       described_class.use_tape("checkout") { checkout }
 
       expect(YAML.safe_load_file(tape_file("checkout")).fetch("recorded")).to eq(
+        "tape_deck" => TapeDeck::VERSION,
         "exclude_tables" => ["billing.*"],
         "exclude_columns" => ["*.note"],
         "databases" => {"shop" => {"excluded" => ["orders.note"]}, "billing" => {"excluded" => ["invoices"]}}
@@ -526,6 +528,43 @@ RSpec.describe TapeDeck do
         expect(tape_diff("tokens").dig("shop", "tokens", "inserted")).to match_array(
           values.each_with_index.map { |value, i| {"id" => "new shop.tokens #{i + 1}", "value" => value} }
         )
+      end
+    end
+
+    describe "rules on the tape" do
+      def import(*statuses) = statuses.each { order_with_items("x", status: _1) }
+
+      it "records them" do
+        config = described_class.configuration
+        config.keep_new_ids("shop.audit_log")
+        config.number_by_content("shop.orders")
+        config.generated_keys("shop.tokens.id")
+        config.references_to("shop.orders", "billing.invoices.order_id")
+        described_class.use_tape("import") { import("a") }
+
+        expect(YAML.safe_load_file(tape_file("import")).fetch("recorded")).to include(
+          "keep_new_ids" => ["shop.audit_log"],
+          "number_by_content" => ["shop.orders"],
+          "generated_keys" => ["shop.tokens.id"],
+          "references_to" => {"shop.orders" => ["billing.invoices.order_id"]}
+        )
+      end
+
+      it "are used when verifying, even after the configuration changed" do
+        described_class.configuration.number_by_content("shop.orders", "shop.items")
+        described_class.use_tape("import") { import("a", "b") }
+        move_counters
+        described_class.configuration.numbered_by_content.clear
+
+        expect { described_class.use_tape("import") { import("b", "a") } }.not_to raise_error
+      end
+
+      it "keep a tape recorded in creation order that way" do
+        described_class.use_tape("import") { import("a", "b") }
+        move_counters
+        described_class.configuration.number_by_content("shop.orders", "shop.items")
+
+        expect { described_class.use_tape("import") { import("b", "a") } }.to raise_error(TapeDeck::UnexpectedDiffError)
       end
     end
 

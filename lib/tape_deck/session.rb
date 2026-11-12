@@ -13,7 +13,8 @@ module TapeDeck
     # @param recorder [Recorder]
     # @param filter [Filter] narrows what is compared when verifying
     # @param on_schema_change [Symbol] see {Configuration#on_schema_change}
-    # @param new_rows [NewRows] replaces the ids of new rows with placeholders
+    # @param new_rows [NewRows] replaces the ids of new rows with placeholders when recording. Verifying uses the rules
+    #   the tape was recorded with.
     def initialize(tape, recorder, filter, on_schema_change: :error, new_rows: NewRows.new(recorder))
       @tape = tape
       @recorder = recorder
@@ -33,16 +34,19 @@ module TapeDeck
       return if discard
 
       after = @recorder.snapshot(previous: @before)
-      actual = @new_rows.apply(round_trip(@recorder.diff(@before, after)))
+      diff = round_trip(@recorder.diff(@before, after))
       current = @recorder.resolve
       if tape.recording?
-        tape.write(actual, recorded: {
+        tape.write(@new_rows.apply(diff), recorded: {
           "exclude_tables" => @recorder.excluded_tables,
           "exclude_columns" => @recorder.excluded_columns,
           "include_views" => @recorder.included_views,
+          **@new_rows.rules,
           "databases" => current
         })
       else
+        # Numbering only changes how ids are written, so the tape's own rules apply, whatever the configuration says now
+        actual = NewRows.recorded_with(@recorder, tape.read.fetch("recorded")).apply(diff)
         verify(actual, current)
       end
     end
