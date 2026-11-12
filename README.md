@@ -15,7 +15,7 @@ You run a command or request against a black-box project. TapeDeck snapshots all
 
 API, naming and flow are modelled on [VCR](https://github.com/vcr/vcr), with one big difference: a tape is never played back. The action always runs for real, and the tape is only what the result is compared against.
 
-Works with [Sequel](https://sequel.jeremyevans.net) and MySQL or MariaDB (it uses `CHECKSUM TABLE` to skip unchanged tables). Tested with MySQL 8.4 and MariaDB 11.4, using the `mysql2` or `trilogy` adapter.
+Works with [Sequel](https://sequel.jeremyevans.net) and MySQL or MariaDB (it uses `CHECKSUM TABLE` to skip unchanged tables). Tested with MySQL 8.4 and MariaDB 11.4, using the `mysql2` or `trilogy` adapter. Needs Ruby 3.2 or newer.
 
 ## Installation
 

@@ -40,10 +40,14 @@ jobs:
 
   mysql:
     runs-on: ubuntu-latest
-    name: ${{ matrix.server }} (${{ matrix.adapter }})
+    name: ${{ matrix.server }} (${{ matrix.adapter }}, Ruby ${{ matrix.ruby }})
     strategy:
       fail-fast: false
       matrix:
+        # Oldest and newest supported Ruby. The build job runs all of them.
+        ruby:
+          - '3.2'
+          - '4.0'
         server:
           - mysql:8.4
           - mariadb:11.4
@@ -51,6 +55,7 @@ jobs:
           - mysql2
           - trilogy
     env:
+      RUBY_IMAGE: ruby:${{ matrix.ruby }}
       MYSQL_IMAGE: ${{ matrix.server }}
 
     steps:

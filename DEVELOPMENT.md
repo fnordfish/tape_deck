@@ -52,9 +52,9 @@ The devcontainer (`.devcontainer/`) has Ruby and MySQL 8.4, with `TAPE_DECK_MYSQ
 
     docker compose -f .devcontainer/compose.yml run --rm app sh -c "bundle install && bundle exec rake spec"
 
-The server is MySQL 8.4 by default. Set `MYSQL_IMAGE` for another one, e.g. `MYSQL_IMAGE=mariadb:11.4`.
+The server is MySQL 8.4 by default. Set `MYSQL_IMAGE` for another one, e.g. `MYSQL_IMAGE=mariadb:11.4`. Ruby is 4.0, set `RUBY_IMAGE` for another one, e.g. `RUBY_IMAGE=ruby:3.2`.
 
-CI runs the default task, plus `spec:mysql2` and `spec:trilogy` in the devcontainer setup, against MySQL 8.4 and MariaDB 11.4.
+CI runs the default task on every supported Ruby and on Ruby head. It runs `spec:mysql2` and `spec:trilogy` in the devcontainer setup, against MySQL 8.4 and MariaDB 11.4, on the oldest and newest supported Ruby.
 
 The adapters live in the optional `mysql` Gemfile group (`BUNDLE_WITH=mysql`), because `mysql2` needs the MySQL client library to install.
 
@@ -76,7 +76,7 @@ Releases go to rubygems.org and to the `@fnordfish` namespace on [gem.coop](http
 
 ## Tested against
 
-MySQL 8.4 and MariaDB 11.4, each with the `mysql2` and `trilogy` adapters. CI runs all four. Other servers and versions may work, but are untested.
+Ruby 3.2 to 4.0. MySQL 8.4 and MariaDB 11.4, each with the `mysql2` and `trilogy` adapters, on Ruby 3.2 and 4.0. Other servers and versions may work, but are untested.
 
 ## Roadmap and open questions
 

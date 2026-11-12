@@ -2,7 +2,7 @@ name: tape_deck
 
 services:
   app:
-    image: ruby:4.0
+    image: ${RUBY_IMAGE:-ruby:4.0}
     command: sleep infinity
     working_dir: /workspaces/tape_deck
     volumes:
