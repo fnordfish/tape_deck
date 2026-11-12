@@ -118,6 +118,10 @@ require_relative "tape_deck/recorder"
 # import, {Configuration#number_by_content} numbers a table's rows by their content instead.
 # {Configuration#keep_new_ids} keeps the real ids of some tables.
 #
+# References across databases, and ones without a foreign key, need {Configuration#references_to}. Keys that are
+# generated, but not auto increment, like UUIDs, need {Configuration#generated_keys}. Those have no creation order, so
+# their rows are numbered by content.
+#
 # == Views
 #
 # Views are left out by default. A view holds no data of its own, so the changes of the tables behind it are already
@@ -267,7 +271,13 @@ module TapeDeck
         include_views: configuration.included_views
       )
       filter = Filter.new(only: only, ignore: ignore)
-      new_rows = NewRows.new(recorder, keep: configuration.kept_new_ids, by_content: configuration.numbered_by_content)
+      new_rows = NewRows.new(
+        recorder,
+        keep: configuration.kept_new_ids,
+        by_content: configuration.numbered_by_content,
+        generated_keys: configuration.generated_key_columns,
+        references: configuration.reference_columns
+      )
       sessions.push(Session.new(tape, recorder, filter, on_schema_change: configuration.on_schema_change, new_rows: new_rows))
       tape
     end

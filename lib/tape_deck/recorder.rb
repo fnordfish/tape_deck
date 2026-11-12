@@ -101,12 +101,13 @@ module TapeDeck
       end
     end
 
-    # Generated keys of the tables the diff inserts rows into: a single primary key column the database fills in
-    # (auto increment). Views have none.
+    # Generated keys of the tables the diff inserts rows into: a single primary key column that is auto increment,
+    # or matches one of the patterns. Views have none.
     #
     # @param diff [Hash] result of {#diff}
+    # @param patterns [Array<String>] globs on +"<database>.<table>.<column>"+, see {Configuration#generated_keys}
     # @return [Hash{String => Hash{String => String}}] database -> table -> key column
-    def generated_keys(diff)
+    def generated_keys(diff, patterns: [])
       diff.to_h do |db_name, tables|
         db = @dbs.fetch(db_name)
         real_tables = db.tables.map(&:to_s)
@@ -114,26 +115,37 @@ module TapeDeck
           next unless changes.key?("inserted") && real_tables.include?(table)
 
           pk = db.schema(table.to_sym).select { |_, info| info[:primary_key] }
-          [table, pk.first.first.to_s] if pk.size == 1 && pk.first.last[:auto_increment]
+          next unless pk.size == 1
+
+          column, info = pk.first
+          generated = info[:auto_increment] || Patterns.match?(patterns, "#{db_name}.#{table}.#{column}")
+          [table, column.to_s] if generated
         end
         [db_name, keys.to_h]
       end
     end
 
-    # Declared single column foreign keys of the tables in the diff.
+    # Single column references of the tables in the diff: declared foreign keys, and columns that match the patterns.
+    # Matching patterns win over declared foreign keys.
     #
     # @param diff [Hash] result of {#diff}
+    # @param patterns [Hash{String => Array<String>}] +"<database>.<table>"+ -> globs on +"<database>.<table>.<column>"+
+    #   of columns holding its keys, see {Configuration#references_to}
     # @return [Hash{String => Hash{String => Hash{String => Array(String, String)}}}] database -> table -> column ->
     #   +[database, table]+ it references
-    def references(diff)
+    def references(diff, patterns: {})
       diff.to_h do |db_name, tables|
         db = @dbs.fetch(db_name)
         real_tables = db.tables.map(&:to_s)
         references = tables.keys.select { real_tables.include?(_1) }.to_h do |table|
-          columns = db.foreign_key_list(table.to_sym).filter_map do |foreign_key|
+          declared = db.foreign_key_list(table.to_sym).filter_map do |foreign_key|
             [foreign_key[:columns].first.to_s, [db_name, foreign_key[:table].to_s]] if foreign_key[:columns].size == 1
           end
-          [table, columns.to_h]
+          configured = db.schema(table.to_sym).filter_map do |column, _|
+            target = patterns.find { |_, columns| Patterns.match?(columns, "#{db_name}.#{table}.#{column}") }&.first
+            [column.to_s, target.split(".", 2)] if target
+          end
+          [table, declared.to_h.merge(configured.to_h)]
         end
         [db_name, references]
       end

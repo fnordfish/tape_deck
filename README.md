@@ -153,6 +153,15 @@ c.number_by_content "shop.imported_products", "shop.imported_prices"
 
 Rows are then sorted by their content, and referenced tables are numbered first, so a row's references count as part of its content. Rows with identical content are numbered in creation order.
 
+References across databases, and columns without a foreign key, need to be named. Keys that are generated, but not auto increment, like UUIDs, too:
+
+```ruby
+c.references_to "shop.orders", "billing.invoices.order_id", "*.last_order_id"
+c.generated_keys "shop.tokens.id"
+```
+
+UUIDs have no creation order, so those rows are always numbered by content.
+
 ### Views
 
 Views are left out, because the changes of the tables behind them are on the tape anyway. Include them to also notice a changed view definition:

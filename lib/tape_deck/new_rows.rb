@@ -12,19 +12,23 @@ module TapeDeck
     #   {Configuration#keep_new_ids}
     # @param by_content [Array<String>] patterns on +"<database>.<table>"+ for tables whose new rows are numbered by
     #   content instead of creation order, see {Configuration#number_by_content}
-    def initialize(recorder, keep: [], by_content: [])
+    # @param generated_keys [Array<String>] patterns for more generated keys, see {Configuration#generated_keys}
+    # @param references [Hash{String => Array<String>}] more references, see {Configuration#references_to}
+    def initialize(recorder, keep: [], by_content: [], generated_keys: [], references: {})
       @recorder = recorder
       @keep = keep
       @by_content = by_content
+      @generated_keys = generated_keys
+      @references = references
     end
 
     # @param diff [Hash] a diff as stored on a tape
     # @return [Hash] the diff with placeholders
     def apply(diff)
-      keys = @recorder.generated_keys(diff).to_h do |db_name, tables|
+      keys = @recorder.generated_keys(diff, patterns: @generated_keys).to_h do |db_name, tables|
         [db_name, tables.reject { |table, _| Patterns.match?(@keep, "#{db_name}.#{table}") }]
       end
-      references = @recorder.references(diff)
+      references = @recorder.references(diff, patterns: @references)
       columns = diff.to_h do |db_name, tables|
         [db_name, tables.keys.to_h { [_1, placeholder_columns(db_name, _1, keys, references)] }]
       end
@@ -50,13 +54,17 @@ module TapeDeck
     end
 
     # Tables numbered by content go after the ones they reference, so their content can hold those placeholders.
+    # Keys that are not integers, like UUIDs, tell nothing about creation order, so their tables are numbered by
+    # content too.
     #
     # @return [Hash{Array(String, String) => Hash{Object => String}}] +[database, table]+ -> key -> placeholder
     def number(diff, keys, columns)
       tables = keys.flat_map { |db_name, db_keys| db_keys.map { |table, key| [db_name, table, key] } }
-      by_content, by_creation = tables.partition { |db_name, table, _| content?(db_name, table) }
       new_keys = tables.to_h do |db_name, table, key|
         [[db_name, table], diff.dig(db_name, table, "inserted").map { _1.fetch(key) }]
+      end
+      by_content, by_creation = tables.partition do |db_name, table, _|
+        content?(db_name, table) || !new_keys.fetch([db_name, table]).all?(Integer)
       end
 
       placeholders = {}

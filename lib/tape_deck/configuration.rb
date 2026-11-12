@@ -42,6 +42,12 @@ module TapeDeck
     # @return [Array<String>] patterns added with {#number_by_content}
     attr_reader :numbered_by_content
 
+    # @return [Array<String>] patterns added with {#generated_keys}
+    attr_reader :generated_key_columns
+
+    # @return [Hash{String => Array<String>}] patterns added with {#references_to}, by referenced table
+    attr_reader :reference_columns
+
     def initialize
       @tape_library_dir = "spec/db_tapes"
       @databases = {}
@@ -52,6 +58,8 @@ module TapeDeck
       @included_views = []
       @kept_new_ids = []
       @numbered_by_content = []
+      @generated_key_columns = []
+      @reference_columns = {}
     end
 
     # @param mode [Symbol] one of {Tape::RECORD_MODES}
@@ -126,6 +134,30 @@ module TapeDeck
     #   c.number_by_content "shop.imported_products"
     def number_by_content(*patterns)
       @numbered_by_content.concat(patterns.map(&:to_s))
+    end
+
+    # Marks matching primary keys as generated, like auto increment ones are: keys that the database or the
+    # application fills in, for example UUIDs. Their new rows get placeholders, see "New rows" in {TapeDeck}. Keys that
+    # are not integers have no creation order, so their rows are numbered by content.
+    #
+    # @param patterns [Array<String>] globs on +"<database>.<table>.<column>"+
+    # @return [void]
+    # @example
+    #   c.generated_keys "shop.tokens.id", "*.uuid"
+    def generated_keys(*patterns)
+      @generated_key_columns.concat(patterns.map(&:to_s))
+    end
+
+    # Marks matching columns as holding keys of a table, like a declared foreign key does. Needed for references
+    # across databases, and ones without a foreign key. Overrides a declared foreign key of the same column.
+    #
+    # @param table [String] +"<database>.<table>"+ whose keys the columns hold
+    # @param patterns [Array<String>] globs on +"<database>.<table>.<column>"+
+    # @return [void]
+    # @example
+    #   c.references_to "shop.orders", "billing.invoices.order_id", "*.last_order_id"
+    def references_to(table, *patterns)
+      (@reference_columns[table.to_s] ||= []).concat(patterns.map(&:to_s))
     end
 
     # Wraps RSpec examples tagged +:tape_deck+ in a tape. The tape is named after the example's description hierarchy

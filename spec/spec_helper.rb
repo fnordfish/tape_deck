@@ -3,6 +3,7 @@
 require "tape_deck"
 require "tmpdir"
 require "zlib"
+require "securerandom"
 
 require_relative "support/databases"
 require_relative "support/server_examples"

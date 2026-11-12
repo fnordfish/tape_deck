@@ -476,6 +476,59 @@ RSpec.describe TapeDeck do
       end
     end
 
+    describe "configured" do
+      it "replaces references across databases" do
+        described_class.configuration.references_to("shop.orders", "billing.invoices.order_id")
+        described_class.use_tape("checkout") { checkout }
+        move_counters
+
+        expect { described_class.use_tape("checkout") { checkout } }.not_to raise_error
+        expect(tape_diff("checkout").dig("billing", "invoices", "inserted")).to eq(
+          [{"id" => "new billing.invoices 1", "order_id" => "new shop.orders 1"}]
+        )
+      end
+
+      it "replaces references without a foreign key, matched by pattern" do
+        shop.create_table(:notes) do
+          primary_key :id
+          Integer :order_ref
+        end
+        described_class.configuration.references_to("shop.orders", "*.order_ref")
+        described_class.use_tape("note") { shop[:notes].insert(order_ref: order_with_items) }
+
+        expect(tape_diff("note").dig("shop", "notes", "inserted", 0)).to include("order_ref" => "new shop.orders 1")
+      end
+
+      it "replaces generated keys that are not auto increment, numbered by content" do
+        shop.create_table(:tokens) do
+          String :id, primary_key: true
+          String :value
+        end
+        shop.create_table(:uses) do
+          primary_key :id
+          foreign_key :token_id, :tokens, type: String
+        end
+        described_class.configuration.generated_keys("shop.tokens.id")
+        # Issuing tokens in another order creates the uses in another order too
+        described_class.configuration.number_by_content("shop.uses")
+        issue = ->(*values) do
+          values.each do |value|
+            token = SecureRandom.uuid
+            shop[:tokens].insert(id: token, value: value)
+            shop[:uses].insert(token_id: token)
+          end
+        end
+        # Six of them, so random UUIDs can't happen to be in content order (1 in 720)
+        values = %w[a b c d e f]
+        described_class.use_tape("tokens") { issue.call(*values) }
+
+        expect { described_class.use_tape("tokens") { issue.call(*values.reverse) } }.not_to raise_error
+        expect(tape_diff("tokens").dig("shop", "tokens", "inserted")).to match_array(
+          values.each_with_index.map { |value, i| {"id" => "new shop.tokens #{i + 1}", "value" => value} }
+        )
+      end
+    end
+
     it "keeps new ids of tables configured to keep them" do
       described_class.configuration.keep_new_ids("shop.items")
       move_counters

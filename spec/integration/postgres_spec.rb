@@ -22,6 +22,19 @@ RSpec.describe "PostgreSQL", :postgres do
     shop.run("DROP SCHEMA IF EXISTS other CASCADE")
   end
 
+  it "numbers rows with UUID keys the database generates, if configured" do
+    shop.run("CREATE TABLE tokens (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), value text)")
+    TapeDeck.configuration.generated_keys("shop.tokens.id")
+    issue = -> { %w[a b c].each { shop[:tokens].insert(value: _1) } }
+    TapeDeck.use_tape("tokens") { issue.call }
+    shop[:tokens].delete
+
+    expect { TapeDeck.use_tape("tokens") { issue.call } }.not_to raise_error
+    expect(YAML.safe_load_file(tape_file("tokens")).dig("diff", "shop", "tokens", "inserted")).to match_array(
+      %w[a b c].each_with_index.map { |value, i| {"id" => "new shop.tokens #{i + 1}", "value" => value} }
+    )
+  end
+
   describe "values" do
     before do
       shop.create_table(:values) do
