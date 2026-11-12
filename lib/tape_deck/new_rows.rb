@@ -23,19 +23,19 @@ module TapeDeck
     end
 
     # @param recorder [Recorder]
-    # @param recorded [Hash] the +recorded+ section of a tape, see {Tape#read}
+    # @param tape_deck [Hash] the +tape_deck+ section of a tape, see {Tape#read}
     # @return [NewRows] numbering with the rules the tape was recorded with
-    def self.recorded_with(recorder, recorded)
+    def self.recorded_with(recorder, tape_deck)
       new(
         recorder,
-        keep: recorded.fetch("keep_new_ids"),
-        by_content: recorded.fetch("number_by_content"),
-        generated_keys: recorded.fetch("generated_keys"),
-        references: recorded.fetch("references_to")
+        keep: tape_deck.fetch("keep_new_ids"),
+        by_content: tape_deck.fetch("number_by_content"),
+        generated_keys: tape_deck.fetch("generated_keys"),
+        references: tape_deck.fetch("references_to")
       )
     end
 
-    # @return [Hash] the rules, as stored in the +recorded+ section of a tape
+    # @return [Hash] the rules, as stored in the +tape_deck+ section of a tape
     def rules
       {
         "keep_new_ids" => @keep,

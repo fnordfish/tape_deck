@@ -8,8 +8,8 @@ module TapeDeck
   # rules, the watched databases, and per database the tables and columns the rules left out and the views they
   # included. Empty lists are left out of the file.
   #
-  #   recorded:
-  #     tape_deck: 0.1.0
+  #   tape_deck:
+  #     version: 0.1.0
   #     exclude_tables: [shop.sessions]
   #     exclude_columns: ["*.created_at"]
   #     include_views: [shop.order_totals]
@@ -23,13 +23,13 @@ module TapeDeck
   #       orders:
   #         inserted: [...]
   class Tape
-    # Recording rules at the top of the +recorded+ section that are lists of patterns.
+    # Recording rules at the top of the +tape_deck+ section that are lists of patterns.
     RULES = %w[exclude_tables exclude_columns include_views keep_new_ids number_by_content generated_keys].freeze
 
-    # Recording rules at the top of the +recorded+ section that map a table to patterns.
+    # Recording rules at the top of the +tape_deck+ section that map a table to patterns.
     TABLE_RULES = %w[references_to].freeze
 
-    # Lists per database in the +recorded+ section.
+    # Lists per database in the +tape_deck+ section.
     DATABASE_LISTS = %w[excluded views].freeze
 
     # Supported values for the +:record+ option:
@@ -60,7 +60,7 @@ module TapeDeck
       raise ArgumentError, "invalid record mode #{mode.inspect}, use one of #{RECORD_MODES.inspect}"
     end
 
-    # Like {.serialize}, but writes the lists of the +recorded+ section on one line, so it stays short.
+    # Like {.serialize}, but writes the lists of the +tape_deck+ section on one line, so it stays short.
     #
     # @param content [Hash] see {#read}
     # @return [String] the YAML stored in a tape file
@@ -68,8 +68,8 @@ module TapeDeck
       tree = Psych::Visitors::YAMLTree.create(line_width: -1)
       tree << content
       root = tree.tree.children.first.children.first
-      recorded = root.children.each_slice(2).find { |key, _| key.value == "recorded" }&.last
-      recorded&.each { _1.style = Psych::Nodes::Sequence::FLOW if _1.is_a?(Psych::Nodes::Sequence) }
+      section = root.children.each_slice(2).find { |key, _| key.value == "tape_deck" }&.last
+      section&.each { _1.style = Psych::Nodes::Sequence::FLOW if _1.is_a?(Psych::Nodes::Sequence) }
       tree.tree.yaml(nil, line_width: -1)
     end
 
@@ -106,7 +106,7 @@ module TapeDeck
 
     # Reads the tape file once, later calls return the same content.
     #
-    # @return [Hash] +"recorded"+: see {#write}, and +"diff"+: the stored diff
+    # @return [Hash] +"tape_deck"+: see {#write}, and +"diff"+: the stored diff
     # @raise [TapeLoadingError] if the file is not valid YAML or does not hold a recording
     def read
       @content ||= load
@@ -115,16 +115,16 @@ module TapeDeck
     # Also stores the version of TapeDeck that recorded the tape.
     #
     # @param diff [Hash] the diff to store in the tape file, replacing its content
-    # @param recorded [Hash] the {RULES} and {TABLE_RULES}, and +"databases"+: what they resolved to in each
+    # @param tape_deck [Hash] the {RULES} and {TABLE_RULES}, and +"databases"+: what they resolved to in each
     #   database, as returned by {Recorder#resolve}
     # @return [void]
-    def write(diff, recorded:)
-      databases = recorded.fetch("databases").transform_values do |lists|
+    def write(diff, tape_deck:)
+      databases = tape_deck.fetch("databases").transform_values do |lists|
         non_empty = lists.slice(*DATABASE_LISTS).reject { |_, list| list.empty? }
         non_empty unless non_empty.empty?
       end
-      rules = recorded.slice(*RULES, *TABLE_RULES).reject { |_, rule| rule.empty? }
-      content = {"recorded" => {"tape_deck" => VERSION, **rules, "databases" => databases}, "diff" => diff}
+      rules = tape_deck.slice(*RULES, *TABLE_RULES).reject { |_, rule| rule.empty? }
+      content = {"tape_deck" => {"version" => VERSION, **rules, "databases" => databases}, "diff" => diff}
       FileUtils.mkdir_p(File.dirname(file))
       File.write(file, self.class.dump(content))
       @content = nil
@@ -136,14 +136,14 @@ module TapeDeck
       content = YAML.safe_load_file(file)
       raise TapeLoadingError, "tape #{file} does not hold a recording" unless valid_content?(content)
 
-      recorded = content["recorded"]
-      databases = recorded["databases"].transform_values do |lists|
+      section = content["tape_deck"]
+      databases = section["databases"].transform_values do |lists|
         DATABASE_LISTS.to_h { [_1, Array(lists&.dig(_1))] }
       end
-      rules = RULES.to_h { [_1, Array(recorded[_1])] }
-      table_rules = TABLE_RULES.to_h { [_1, recorded[_1].to_h.transform_values { |patterns| Array(patterns) }] }
+      rules = RULES.to_h { [_1, Array(section[_1])] }
+      table_rules = TABLE_RULES.to_h { [_1, section[_1].to_h.transform_values { |patterns| Array(patterns) }] }
       {
-        "recorded" => {"tape_deck" => recorded["tape_deck"], **rules, **table_rules, "databases" => databases},
+        "tape_deck" => {"version" => section["version"], **rules, **table_rules, "databases" => databases},
         "diff" => content["diff"]
       }
     rescue Psych::Exception => e
@@ -153,8 +153,8 @@ module TapeDeck
     def valid_content?(content)
       return false unless content.is_a?(Hash) && content["diff"].is_a?(Hash)
 
-      recorded = content["recorded"]
-      databases = recorded["databases"] if recorded.is_a?(Hash)
+      section = content["tape_deck"]
+      databases = section["databases"] if section.is_a?(Hash)
       databases.is_a?(Hash) && databases.values.all? { _1.nil? || _1.is_a?(Hash) }
     end
   end

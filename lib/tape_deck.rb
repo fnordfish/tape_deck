@@ -38,8 +38,8 @@ require_relative "tape_deck/recorder"
 # rules, the watched databases, and per database the tables and columns the rules left out and the views they
 # included. Empty lists are left out of the file.
 #
-#   recorded:
-#     tape_deck: 0.1.0
+#   tape_deck:
+#     version: 0.1.0
 #     exclude_tables: [shop.sessions]
 #     exclude_columns: ["*.created_at"]
 #     include_views: [shop.order_totals]
@@ -323,7 +323,7 @@ module TapeDeck
     def tape_databases(tape, names)
       return names if tape.recording?
 
-      recorded = tape.read.fetch("recorded").fetch("databases").keys
+      recorded = tape.read.fetch("tape_deck").fetch("databases").keys
       names = Array(names || recorded).map(&:to_s)
       missing = names - recorded
       unless missing.empty?

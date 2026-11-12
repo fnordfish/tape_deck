@@ -37,7 +37,7 @@ module TapeDeck
       diff = round_trip(@recorder.diff(@before, after))
       current = @recorder.resolve
       if tape.recording?
-        tape.write(@new_rows.apply(diff), recorded: {
+        tape.write(@new_rows.apply(diff), tape_deck: {
           "exclude_tables" => @recorder.excluded_tables,
           "exclude_columns" => @recorder.excluded_columns,
           "include_views" => @recorder.included_views,
@@ -46,7 +46,7 @@ module TapeDeck
         })
       else
         # Numbering only changes how ids are written, so the tape's own rules apply, whatever the configuration says now
-        actual = NewRows.recorded_with(@recorder, tape.read.fetch("recorded")).apply(diff)
+        actual = NewRows.recorded_with(@recorder, tape.read.fetch("tape_deck")).apply(diff)
         verify(actual, current)
       end
     end
@@ -61,7 +61,7 @@ module TapeDeck
     #
     # @param current [Hash] what the current rules resolve to, see {Recorder#resolve}
     def verify(actual, current)
-      recorded = tape.read.fetch("recorded")
+      recorded = tape.read.fetch("tape_deck")
       on_tape = recorded.fetch("databases").slice(*current.keys)
       by_recorded_rules = @recorder.resolve(
         exclude_tables: recorded.fetch("exclude_tables"),

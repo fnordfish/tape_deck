@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe TapeDeck::Tape do
-  let(:recorded) do
+  let(:tape_deck) do
     {
       "exclude_tables" => ["shop.sessions"],
       "exclude_columns" => ["*.created_at"],
@@ -17,8 +17,8 @@ RSpec.describe TapeDeck::Tape do
     }
   end
 
-  def write_tape(name, diff = {}, recorded: TapeDeck::Tape::RULES.to_h { [_1, []] }.merge("references_to" => {}, "databases" => {}))
-    described_class.new(name, record: :overwrite).write(diff, recorded: recorded)
+  def write_tape(name, diff = {}, tape_deck: TapeDeck::Tape::RULES.to_h { [_1, []] }.merge("references_to" => {}, "databases" => {}))
+    described_class.new(name, record: :overwrite).write(diff, tape_deck: tape_deck)
   end
 
   it "builds the file path from the tape library and a sanitized name" do
@@ -105,7 +105,7 @@ RSpec.describe TapeDeck::Tape do
       expect { tape.read }.to raise_error(TapeDeck::TapeLoadingError, /does not hold a recording/)
     end
 
-    it "raises for a tape without a recorded section" do
+    it "raises for a tape without a tape_deck section" do
       write_file("shop:\n  orders: {}\n")
 
       expect { tape.read }.to raise_error(TapeDeck::TapeLoadingError, /does not hold a recording/)
@@ -114,18 +114,18 @@ RSpec.describe TapeDeck::Tape do
 
   it "writes and reads back a diff, creating subdirectories" do
     diff = {"shop" => {"orders" => {"inserted" => [{"id" => 1, "note" => "a: b"}]}}}
-    write_tape("a/b/c", diff, recorded: recorded)
+    write_tape("a/b/c", diff, tape_deck: tape_deck)
 
-    expect(described_class.new("a/b/c").read).to eq("recorded" => {"tape_deck" => TapeDeck::VERSION, **recorded}, "diff" => diff)
+    expect(described_class.new("a/b/c").read).to eq("tape_deck" => {"version" => TapeDeck::VERSION, **tape_deck}, "diff" => diff)
   end
 
   it "writes lists on one line, and leaves out empty ones" do
-    write_tape("t", {}, recorded: recorded)
+    write_tape("t", {}, tape_deck: tape_deck)
 
     expect(File.read(described_class.new("t").file)).to eq(<<~YAML)
       ---
-      recorded:
-        tape_deck: #{TapeDeck::VERSION}
+      tape_deck:
+        version: #{TapeDeck::VERSION}
         exclude_tables: [shop.sessions]
         exclude_columns: ["*.created_at"]
         include_views: [shop.order_totals]
@@ -145,8 +145,8 @@ RSpec.describe TapeDeck::Tape do
 
   it "reads a tape without recording rules" do
     no_rules = TapeDeck::Tape::RULES.to_h { [_1, []] }.merge("references_to" => {})
-    write_tape("t", {}, recorded: recorded.merge(no_rules))
+    write_tape("t", {}, tape_deck: tape_deck.merge(no_rules))
 
-    expect(described_class.new("t").read.fetch("recorded")).to include(no_rules)
+    expect(described_class.new("t").read.fetch("tape_deck")).to include(no_rules)
   end
 end

@@ -46,8 +46,8 @@ RSpec.describe TapeDeck do
       expect(result).to eq(1)
       expect(File.read(tape_file("checkout"))).to eq(<<~YAML)
         ---
-        recorded:
-          tape_deck: #{TapeDeck::VERSION}
+        tape_deck:
+          version: #{TapeDeck::VERSION}
           databases:
             shop:
             billing:
@@ -146,7 +146,7 @@ RSpec.describe TapeDeck do
 
       described_class.use_tape("checkout", databases: "shop") { checkout }
 
-      expect(YAML.safe_load_file(tape_file("checkout")).dig("recorded", "databases").keys).to eq(["shop"])
+      expect(YAML.safe_load_file(tape_file("checkout")).dig("tape_deck", "databases").keys).to eq(["shop"])
     end
 
     it "verifies a subset of the recorded databases" do
@@ -192,8 +192,8 @@ RSpec.describe TapeDeck do
       described_class.configuration.exclude_tables("billing.*")
       described_class.use_tape("checkout") { checkout }
 
-      expect(YAML.safe_load_file(tape_file("checkout")).fetch("recorded")).to eq(
-        "tape_deck" => TapeDeck::VERSION,
+      expect(YAML.safe_load_file(tape_file("checkout")).fetch("tape_deck")).to eq(
+        "version" => TapeDeck::VERSION,
         "exclude_tables" => ["billing.*"],
         "exclude_columns" => ["*.note"],
         "databases" => {"shop" => {"excluded" => ["orders.note"]}, "billing" => {"excluded" => ["invoices"]}}
@@ -266,7 +266,7 @@ RSpec.describe TapeDeck do
 
     def include_statuses = described_class.configuration.include_views("shop.order_*")
 
-    def recorded = YAML.safe_load_file(tape_file("checkout")).fetch("recorded")
+    def tape_deck_section = YAML.safe_load_file(tape_file("checkout")).fetch("tape_deck")
 
     before { create_statuses_view }
 
@@ -274,7 +274,7 @@ RSpec.describe TapeDeck do
       described_class.use_tape("checkout") { checkout }
 
       expect(tape_diff("checkout")["shop"].keys).to eq(["orders"])
-      expect(recorded.dig("databases", "shop")).to be_nil
+      expect(tape_deck_section.dig("databases", "shop")).to be_nil
     end
 
     it "records included views as a multiset of rows" do
@@ -287,8 +287,8 @@ RSpec.describe TapeDeck do
         "inserted" => [{"status" => "new", "count" => 2}],
         "deleted" => [{"status" => "new", "count" => 1}]
       )
-      expect(recorded).to include("include_views" => ["shop.order_*"])
-      expect(recorded.dig("databases", "shop")).to eq("views" => ["order_statuses"])
+      expect(tape_deck_section).to include("include_views" => ["shop.order_*"])
+      expect(tape_deck_section.dig("databases", "shop")).to eq("views" => ["order_statuses"])
     end
 
     it "notices a changed view definition" do
@@ -307,7 +307,7 @@ RSpec.describe TapeDeck do
       described_class.use_tape("checkout") { checkout }
 
       expect(tape_diff("checkout").dig("shop", "order_statuses")).to eq("inserted" => [{"status" => "new"}])
-      expect(recorded.dig("databases", "shop", "excluded")).to eq(["order_statuses.count"])
+      expect(tape_deck_section.dig("databases", "shop", "excluded")).to eq(["order_statuses.count"])
     end
 
     it "verifies a tape with a view that is no longer included" do
@@ -542,7 +542,7 @@ RSpec.describe TapeDeck do
         config.references_to("shop.orders", "billing.invoices.order_id")
         described_class.use_tape("import") { import("a") }
 
-        expect(YAML.safe_load_file(tape_file("import")).fetch("recorded")).to include(
+        expect(YAML.safe_load_file(tape_file("import")).fetch("tape_deck")).to include(
           "keep_new_ids" => ["shop.audit_log"],
           "number_by_content" => ["shop.orders"],
           "generated_keys" => ["shop.tokens.id"],

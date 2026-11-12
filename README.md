@@ -59,8 +59,8 @@ end
 The first run writes `spec/db_tapes/checkout/creates_order.yml`:
 
 ```yaml
-recorded:
-  tape_deck: 0.1.0.beta1
+tape_deck:
+  version: 0.1.0.beta1
   exclude_tables: [shop.sessions, "*.schema_migrations"]
   exclude_columns: ["*.created_at", "*.updated_at"]
   databases:
@@ -89,7 +89,7 @@ diff:
           - 9
 ```
 
-`recorded` holds everything that shaped the tape: the TapeDeck version, the recording rules, the databases the tape watched, and what the rules left out of each.
+`tape_deck` holds everything that shaped the tape: the TapeDeck version, the recording rules, the databases the tape watched, and what the rules left out of each.
 
 Every later run verifies against it and raises `TapeDeck::UnexpectedDiffError` with a diff when the changes differ.
 
