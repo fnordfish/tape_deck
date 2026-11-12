@@ -30,15 +30,17 @@ require_relative "tape_deck/recorder"
 # statements that caused it or their order, so INSERT/UPDATE/DELETE statements generated from it can go wrong in many
 # ways: foreign key constraints, generated columns, triggers.
 #
-# Next to the diff, a tape stores what was recorded: the exclude rules, the watched databases, and the tables and
-# columns the rules left out of each.
+# Next to the diff, a tape stores what was recorded: the recording rules, the watched databases, and the tables and
+# columns the rules left out of each and the views they included.
 #
 #   recorded:
 #     exclude_tables: [shop.sessions]
 #     exclude_columns: ["*.created_at"]
+#     include_views: [shop.order_totals]
 #     databases:
 #       shop:
 #         excluded: [orders.created_at, sessions]
+#         views: [order_totals]
 #       billing:
 #   diff:
 #     shop:
@@ -92,6 +94,17 @@ require_relative "tape_deck/recorder"
 # matches dots), so +"*.created_at"+ matches that column in every table of every database, and +"shop.*"+ matches
 # everything in +shop+.
 #
+# == Views
+#
+# Views are left out by default. A view holds no data of its own, so the changes of the tables behind it are already
+# on the tape. {Configuration#include_views} adds views to snapshots, to also notice a changed view definition, or data
+# a view reads from tables that are not recorded. Included views are read in full on every snapshot, and compared as a
+# multiset of rows (+inserted+/+deleted+ only), because they have no primary key.
+#
+# Like the exclude rules, the tape stores the include rules and the views they matched. When verifying, a view on the
+# tape that is no longer included is not compared. A view that is included now, but not on the tape, raises
+# {IncompatibleTapeError}, unless the recorded rules match it too: then a schema change added it, see below.
+#
 # == Excluding and ignoring
 #
 # There are two ways to leave data out, and they act at different moments.
@@ -103,7 +116,8 @@ require_relative "tape_deck/recorder"
 # {IncompatibleTapeError} and the tape needs re-recording.
 #
 # The stored rules also reveal schema changes. When verifying, they are applied to the current schema again. If they
-# leave out other tables or columns than when recording, a table or column matching them was added or removed.
+# leave out other tables or columns, or include other views than when recording, a matching table, column or view was
+# added or removed.
 # {Configuration#on_schema_change} decides whether that raises {IncompatibleTapeError}, warns, or is ignored.
 #
 # *Ignore* means recorded, but not compared. A tape always holds everything that is not excluded. When verifying, one
@@ -122,6 +136,7 @@ require_relative "tape_deck/recorder"
 #     c.default_record_mode = :once
 #     c.exclude_tables  "shop.sessions", "*.schema_migrations"
 #     c.exclude_columns "*.created_at", "*.updated_at", "shop.users.last_seen_at"
+#     c.include_views "shop.order_totals"
 #     c.on_schema_change = :warn
 #     c.configure_rspec_metadata!
 #   end
@@ -224,7 +239,8 @@ module TapeDeck
       recorder = Recorder.new(
         select_databases(tape_databases(tape, databases)),
         exclude_tables: configuration.excluded_tables,
-        exclude_columns: configuration.excluded_columns
+        exclude_columns: configuration.excluded_columns,
+        include_views: configuration.included_views
       )
       filter = Filter.new(only: only, ignore: ignore)
       sessions.push(Session.new(tape, recorder, filter, on_schema_change: configuration.on_schema_change))

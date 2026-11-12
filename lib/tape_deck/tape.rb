@@ -4,15 +4,17 @@ module TapeDeck
   # One recorded diff, stored as a YAML file. Like a +File+, a tape knows where it lives, whether it is there to be
   # recorded or verified, and how to read and write itself. It never touches a database.
   #
-  # Next to the diff, a tape stores what was recorded: the exclude rules, the watched databases, and per database the
-  # tables and columns the rules left out. Empty lists are left out of the file.
+  # Next to the diff, a tape stores what was recorded: the recording rules, the watched databases, and per database the
+  # tables and columns the rules left out and the views they included. Empty lists are left out of the file.
   #
   #   recorded:
   #     exclude_tables: [shop.sessions]
   #     exclude_columns: ["*.created_at"]
+  #     include_views: [shop.order_totals]
   #     databases:
   #       shop:
   #         excluded: [orders.created_at, sessions]
+  #         views: [order_totals]
   #       billing:
   #   diff:
   #     shop:
@@ -20,7 +22,13 @@ module TapeDeck
   #         inserted: [...]
   class Tape
     # Lists in the +recorded+ section of a tape file, written on one line.
-    RECORDED_LISTS = %w[exclude_tables exclude_columns excluded].freeze
+    RECORDED_LISTS = %w[exclude_tables exclude_columns include_views excluded views].freeze
+
+    # Recording rules at the top of the +recorded+ section.
+    RULES = %w[exclude_tables exclude_columns include_views].freeze
+
+    # Lists per database in the +recorded+ section.
+    DATABASE_LISTS = %w[excluded views].freeze
 
     # Supported values for the +:record+ option:
     # [+:once+]      record if the tape file is missing, otherwise verify
@@ -108,16 +116,17 @@ module TapeDeck
     end
 
     # @param diff [Hash] the diff to store in the tape file, replacing its content
-    # @param recorded [Hash] +"exclude_tables"+ and +"exclude_columns"+: the exclude rules, +"databases"+: database ->
-    #   names the rules left out of it, as returned by {Recorder#exclusions}
+    # @param recorded [Hash] the {RULES}, and +"databases"+: what they resolved to in each database, as returned by
+    #   {Recorder#resolve}
     # @return [void]
     def write(diff, recorded:)
-      databases = recorded.fetch("databases").transform_values do |names|
-        {"excluded" => names} unless names.empty?
+      databases = recorded.fetch("databases").transform_values do |lists|
+        non_empty = lists.slice(*DATABASE_LISTS).reject { |_, list| list.empty? }
+        non_empty unless non_empty.empty?
       end
-      patterns = recorded.slice("exclude_tables", "exclude_columns").reject { |_, list| list.empty? }
+      rules = recorded.slice(*RULES).reject { |_, list| list.empty? }
       FileUtils.mkdir_p(File.dirname(file))
-      File.write(file, self.class.dump("recorded" => {**patterns, "databases" => databases}, "diff" => diff))
+      File.write(file, self.class.dump("recorded" => {**rules, "databases" => databases}, "diff" => diff))
       @content = nil
     end
 
@@ -128,15 +137,11 @@ module TapeDeck
       raise TapeLoadingError, "tape #{file} does not hold a recording" unless valid_content?(content)
 
       recorded = content["recorded"]
-      databases = recorded["databases"].transform_values { Array(_1&.dig("excluded")) }
-      {
-        "recorded" => {
-          "exclude_tables" => Array(recorded["exclude_tables"]),
-          "exclude_columns" => Array(recorded["exclude_columns"]),
-          "databases" => databases
-        },
-        "diff" => content["diff"]
-      }
+      databases = recorded["databases"].transform_values do |lists|
+        DATABASE_LISTS.to_h { [_1, Array(lists&.dig(_1))] }
+      end
+      rules = RULES.to_h { [_1, Array(recorded[_1])] }
+      {"recorded" => {**rules, "databases" => databases}, "diff" => content["diff"]}
     rescue Psych::Exception => e
       raise TapeLoadingError, "cannot load tape #{file}: #{e.message}"
     end

@@ -5,11 +5,15 @@ RSpec.describe TapeDeck::Tape do
     {
       "exclude_tables" => ["shop.sessions"],
       "exclude_columns" => ["*.created_at"],
-      "databases" => {"shop" => ["orders.created_at", "sessions"], "billing" => []}
+      "include_views" => ["shop.order_totals"],
+      "databases" => {
+        "shop" => {"excluded" => ["orders.created_at", "sessions"], "views" => ["order_totals"]},
+        "billing" => {"excluded" => [], "views" => []}
+      }
     }
   end
 
-  def write_tape(name, diff = {}, recorded: {"exclude_tables" => [], "exclude_columns" => [], "databases" => {}})
+  def write_tape(name, diff = {}, recorded: TapeDeck::Tape::RULES.to_h { [_1, []] }.merge("databases" => {}))
     described_class.new(name, record: :overwrite).write(diff, recorded: recorded)
   end
 
@@ -119,17 +123,20 @@ RSpec.describe TapeDeck::Tape do
       recorded:
         exclude_tables: [shop.sessions]
         exclude_columns: ["*.created_at"]
+        include_views: [shop.order_totals]
         databases:
           shop:
             excluded: [orders.created_at, sessions]
+            views: [order_totals]
           billing:
       diff: {}
     YAML
   end
 
-  it "reads a tape without exclude rules" do
-    write_tape("t", {}, recorded: recorded.merge("exclude_tables" => [], "exclude_columns" => []))
+  it "reads a tape without recording rules" do
+    no_rules = TapeDeck::Tape::RULES.to_h { [_1, []] }
+    write_tape("t", {}, recorded: recorded.merge(no_rules))
 
-    expect(described_class.new("t").read.fetch("recorded")).to include("exclude_tables" => [], "exclude_columns" => [])
+    expect(described_class.new("t").read.fetch("recorded")).to include(no_rules)
   end
 end

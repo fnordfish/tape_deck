@@ -94,6 +94,16 @@ RSpec.describe "MySQL", :mysql do
 
       expect(recorder.snapshot["shop"].keys).to eq(%w[orders tags])
     end
+
+    it "snapshots included views as a multiset of rows" do
+      shop.create_view(:new_orders, shop[:orders].where(status: "new"))
+      recorder = TapeDeck::Recorder.new(dbs, include_views: ["shop.new_*"])
+
+      diff = recorder.record { shop[:orders].insert(status: "new", note: "b") }
+
+      expect(diff.dig("shop", "new_orders")).to eq("inserted" => [{"id" => 2, "status" => "new", "note" => "b"}])
+      expect(recorder.resolve.dig("shop", "views")).to eq(%w[new_orders])
+    end
   end
 
   describe ".use_tape" do

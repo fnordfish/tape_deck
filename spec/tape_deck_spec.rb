@@ -222,14 +222,14 @@ RSpec.describe TapeDeck do
 
     it "raises when the recorded exclude rules match other columns now" do
       expect { described_class.use_tape("checkout") { checkout } }
-        .to raise_error(TapeDeck::IncompatibleTapeError, /schema changed.*billing: added \["invoices.note"\], removed \[\]/)
+        .to raise_error(TapeDeck::IncompatibleTapeError, /schema changed.*billing excluded: added \["invoices.note"\], removed \[\]/)
     end
 
     it "notices excluded columns that are gone" do
       shop.alter_table(:orders) { drop_column :note }
 
       expect { described_class.use_tape("checkout") { shop[:orders].insert(status: "new") } }
-        .to raise_error(TapeDeck::IncompatibleTapeError, /shop: added \[\], removed \["orders.note"\]/)
+        .to raise_error(TapeDeck::IncompatibleTapeError, /shop excluded: added \[\], removed \["orders.note"\]/)
     end
 
     it "warns and verifies, if configured" do
@@ -243,6 +243,96 @@ RSpec.describe TapeDeck do
       described_class.configuration.on_schema_change = :ignore
 
       expect { described_class.use_tape("checkout") { checkout } }.not_to output.to_stderr
+    end
+  end
+
+  describe "views" do
+    def create_statuses_view(count: Sequel.function(:count).*)
+      shop.create_view(:order_statuses, shop[:orders].select(:status, Sequel.as(count, :count)).group(:status))
+    end
+
+    def include_statuses = described_class.configuration.include_views("shop.order_*")
+
+    def recorded = YAML.safe_load_file(tape_file("checkout")).fetch("recorded")
+
+    before { create_statuses_view }
+
+    it "leaves views out by default" do
+      described_class.use_tape("checkout") { checkout }
+
+      expect(tape_diff("checkout")["shop"].keys).to eq(["orders"])
+      expect(recorded.dig("databases", "shop")).to be_nil
+    end
+
+    it "records included views as a multiset of rows" do
+      include_statuses
+      described_class.use_tape("checkout") { checkout }
+      described_class.use_tape("checkout/again") { checkout }
+
+      expect(tape_diff("checkout").dig("shop", "order_statuses")).to eq("inserted" => [{"status" => "new", "count" => 1}])
+      expect(tape_diff("checkout/again").dig("shop", "order_statuses")).to eq(
+        "inserted" => [{"status" => "new", "count" => 2}],
+        "deleted" => [{"status" => "new", "count" => 1}]
+      )
+      expect(recorded).to include("include_views" => ["shop.order_*"])
+      expect(recorded.dig("databases", "shop")).to eq("views" => ["order_statuses"])
+    end
+
+    it "notices a changed view definition" do
+      include_statuses
+      described_class.use_tape("checkout") { checkout }
+      reset_databases
+      shop.drop_view(:order_statuses)
+      create_statuses_view(count: Sequel.function(:count).* * 2)
+
+      expect { described_class.use_tape("checkout") { checkout } }.to raise_error(TapeDeck::UnexpectedDiffError)
+    end
+
+    it "excludes view columns" do
+      include_statuses
+      described_class.configuration.exclude_columns("*.count")
+      described_class.use_tape("checkout") { checkout }
+
+      expect(tape_diff("checkout").dig("shop", "order_statuses")).to eq("inserted" => [{"status" => "new"}])
+      expect(recorded.dig("databases", "shop", "excluded")).to eq(["order_statuses.count"])
+    end
+
+    it "verifies a tape with a view that is no longer included" do
+      include_statuses
+      described_class.use_tape("checkout") { checkout }
+      reset_databases
+      described_class.configuration.included_views.clear
+
+      expect { described_class.use_tape("checkout") { checkout } }.not_to raise_error
+    end
+
+    it "rejects a tape that lacks a view that is included now" do
+      described_class.use_tape("checkout") { checkout }
+      reset_databases
+      include_statuses
+
+      expect { described_class.use_tape("checkout") { checkout } }
+        .to raise_error(TapeDeck::IncompatibleTapeError, /no recording of the views \["order_statuses"\] of shop/)
+    end
+
+    describe "added by a schema change" do
+      before do
+        include_statuses
+        described_class.use_tape("checkout") { checkout }
+        reset_databases
+        shop.create_view(:order_notes, shop[:orders].select(:note))
+      end
+
+      it "raises" do
+        expect { described_class.use_tape("checkout") { checkout } }
+          .to raise_error(TapeDeck::IncompatibleTapeError, /shop views: added \["order_notes"\], removed \[\]/)
+      end
+
+      it "warns and verifies without the new view, if configured" do
+        described_class.configuration.on_schema_change = :warn
+
+        expect { described_class.use_tape("checkout") { checkout } }.to output(/shop views: added/).to_stderr
+      end
     end
   end
 

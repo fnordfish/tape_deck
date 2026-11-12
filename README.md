@@ -125,9 +125,19 @@ Names are `"<database>.<table>"` and `"<database>.<table>.<column>"`, matched as
 * `exclude_tables` / `exclude_columns` (configuration): never recorded. Meant for noise like timestamps. Excluding more later is fine, existing tapes just stop comparing it. Excluding less means re-recording, because the tapes lack that data (`TapeDeck::IncompatibleTapeError`).
 * `only:` / `ignore:` (per use of a tape): recorded, but not compared. Can change without re-recording.
 
-Since a tape stores its exclude rules, verifying also notices schema changes: when the rules now match tables or columns that were added or removed since recording, it raises `TapeDeck::IncompatibleTapeError`. Set `c.on_schema_change = :warn` to only print a warning, or `:ignore`.
+Since a tape stores its rules, verifying also notices schema changes: when the rules now match tables, columns or views that were added or removed since recording, it raises `TapeDeck::IncompatibleTapeError`. Set `c.on_schema_change = :warn` to only print a warning, or `:ignore`.
 
 Primary key columns are never excluded, because rows are matched by them. Tables without a primary key are compared as a multiset of rows.
+
+### Views
+
+Views are left out, because the changes of the tables behind them are on the tape anyway. Include them to also notice a changed view definition:
+
+```ruby
+c.include_views "shop.order_totals", "billing.*"
+```
+
+Included views are read in full on every snapshot, and compared as a multiset of rows, because they have no primary key. `exclude_columns` applies to their columns.
 
 ### Things to know
 

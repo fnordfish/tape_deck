@@ -26,13 +26,18 @@ module TapeDeck
     # @return [Array<String>] see {Configuration#exclude_columns}
     attr_reader :excluded_columns
 
+    # @return [Array<String>] see {Configuration#include_views}
+    attr_reader :included_views
+
     # @param dbs [Hash{String => Sequel::Database}]
     # @param exclude_tables [Array<String>] see {Configuration#exclude_tables}
     # @param exclude_columns [Array<String>] see {Configuration#exclude_columns}
-    def initialize(dbs, exclude_tables: [], exclude_columns: [])
+    # @param include_views [Array<String>] see {Configuration#include_views}
+    def initialize(dbs, exclude_tables: [], exclude_columns: [], include_views: [])
       @dbs = dbs
       @excluded_tables = exclude_tables
       @excluded_columns = exclude_columns
+      @included_views = include_views
     end
 
     # @yield the action whose database changes are recorded
@@ -43,8 +48,8 @@ module TapeDeck
       diff(before, snapshot(previous: before))
     end
 
-    # Reads all tables that are not excluded. With +previous:+, tables whose +CHECKSUM TABLE+ is unchanged reuse the
-    # previous snapshot, so only changed tables are read again.
+    # Reads all tables that are not excluded, and all included views. With +previous:+, tables whose +CHECKSUM TABLE+
+    # is unchanged reuse the previous snapshot, so only changed tables are read again. Views are always read again.
     #
     # @param previous [Hash, nil] an earlier result of this method
     # @return [Hash{String => Hash{String => TableSnap}}]
@@ -60,7 +65,8 @@ module TapeDeck
           end
           [table, snap]
         end
-        [name, tables]
+        views = view_names(db, name).to_h { [_1, dump(db, name, _1, nil, view: true)] }
+        [name, tables.merge(views)]
       end
     end
 
@@ -77,25 +83,28 @@ module TapeDeck
       end
     end
 
-    # What exclude rules leave out of each database, by default the ones this recorder was created with. Reads the
-    # current schema, so other rules show what they would have left out.
+    # Applies recording rules to the current schema of each database, by default the rules this recorder was created
+    # with. Other rules show what they would leave out and include.
     #
     # @param exclude_tables [Array<String>] table patterns, see {Configuration#exclude_tables}
     # @param exclude_columns [Array<String>] column patterns, see {Configuration#exclude_columns}
-    # @return [Hash{String => Array<String>}] database -> sorted +"<table>"+ and +"<table>.<column>"+ names
-    def exclusions(exclude_tables: @excluded_tables, exclude_columns: @excluded_columns)
+    # @param include_views [Array<String>] view patterns, see {Configuration#include_views}
+    # @return [Hash{String => Hash{String => Array<String>}}] database -> +"excluded"+: sorted +"<table>"+ and
+    #   +"<table>.<column>"+ names the exclude rules leave out, +"views"+: sorted names of the included views
+    def resolve(exclude_tables: @excluded_tables, exclude_columns: @excluded_columns, include_views: @included_views)
       @dbs.to_h do |db_name, db|
         tables = db.tables.map(&:to_s)
+        views = view_names(db, db_name, include_views)
         table_names = tables.select { Patterns.match?(exclude_tables, "#{db_name}.#{_1}") }
-        column_names = (tables - table_names).flat_map do |table|
+        column_names = (tables - table_names + views).flat_map do |table|
           excluded_column_names(db_name, table, db.schema(table.to_sym), exclude_columns).map { "#{table}.#{_1}" }
         end
-        [db_name, (table_names + column_names).sort]
+        [db_name, {"excluded" => (table_names + column_names).sort, "views" => views}]
       end
     end
 
     # @param db_name [String]
-    # @param name [String] +"<table>"+ or +"<table>.<column>"+, as returned by {#exclusions}
+    # @param name [String] +"<table>"+ or +"<table>.<column>"+, as returned by {#resolve}
     # @return [Boolean] whether the exclude rules leave this table or column out. Says nothing about primary keys,
     #   which are never left out.
     def excluded?(db_name, name)
@@ -116,6 +125,13 @@ module TapeDeck
       schema.filter_map do |col, info|
         col if !info[:primary_key] && Patterns.match?(patterns, "#{db_name}.#{table}.#{col}")
       end
+    end
+
+    # @return [Array<String>] sorted names of the views the patterns include
+    def view_names(db, db_name, patterns = @included_views)
+      return [] if patterns.empty?
+
+      db.views.map(&:to_s).select { Patterns.match?(patterns, "#{db_name}.#{_1}") }.sort
     end
 
     # Diffs one database. A table missing on one side (created or dropped by the action) counts as empty there.
@@ -141,10 +157,16 @@ module TapeDeck
       end
     end
 
+    # Views have no primary key. Whatever the schema says, their rows are compared as a multiset.
+    #
     # @return [TableSnap]
-    def dump(db, name, table, sum)
+    def dump(db, name, table, sum, view: false)
       schema = db.schema(table.to_sym)
-      pk = schema.select { |_, i| i[:primary_key] }.map(&:first)
+      pk = if view
+        []
+      else
+        schema.select { |_, i| i[:primary_key] }.map(&:first)
+      end
       types = schema.to_h { |col, i| [col, column_type(i)] }
 
       drop = excluded_column_names(name, table, schema)

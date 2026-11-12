@@ -29,6 +29,7 @@ Decisions made on purpose. Please don't undo them without discussing first:
 - **Primary key columns are never excluded**, even if a pattern matches, because rows are matched by them.
 - **Snapshots reuse unchanged tables.** `CHECKSUM TABLE` runs before and after. A table whose checksum is unchanged reuses the first snapshot object, and `diff` skips it by identity (`equal?`).
 - **Tables without a primary key** are compared as a multiset of rows (inserted / deleted only).
+- **Views are opt-in** (`include_views`), because table diffs already cover their data. Included views are always read in full (no checksum tells whether a view changed) and compared as a multiset. The tape stores the include patterns and the resolved views per database. A view no longer included is not compared, one included by changed rules raises `IncompatibleTapeError`, one added by a schema change is reported like any schema change and not compared.
 - **Binary values**: valid UTF-8 becomes a plain UTF-8 string, anything else is hex up to 64 bytes and a `sha256:` digest above that. Always a plain `String`, never a subclass, so `YAML.safe_load` can read the tape.
 - **TIME columns** are stored as a time of day, recognized by their database type (`Recorder::TIME_DB_TYPE`), because Sequel types `time` as `:time` but not `time(6)`. `mysql2` returns them as a `Time` on 2000-01-01, which would otherwise be stored as a timestamp.
 
@@ -81,6 +82,5 @@ Ruby 3.2 to 4.0. MySQL 8.4 and MariaDB 11.4, each with the `mysql2` and `trilogy
 ## Roadmap and open questions
 
 - Replace new auto increment ids with stable placeholders, so tapes don't depend on the starting state
-- Views are not snapshotted (`db.tables` skips them)
 - Binary data that happens to be valid UTF-8 (short hashes, UUIDs) is shown as text
 - `CHECKSUM TABLE` scans the whole table. Fine for test databases, worth measuring for large ones.

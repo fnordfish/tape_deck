@@ -33,6 +33,9 @@ module TapeDeck
     # @return [Array<String>] patterns added with {#exclude_columns}
     attr_reader :excluded_columns
 
+    # @return [Array<String>] patterns added with {#include_views}
+    attr_reader :included_views
+
     def initialize
       @tape_library_dir = "spec/db_tapes"
       @databases = {}
@@ -40,6 +43,7 @@ module TapeDeck
       @on_schema_change = :error
       @excluded_tables = []
       @excluded_columns = []
+      @included_views = []
     end
 
     # @param mode [Symbol] one of {Tape::RECORD_MODES}
@@ -78,6 +82,19 @@ module TapeDeck
     #   c.exclude_columns "*.created_at", "*.updated_at"
     def exclude_columns(*patterns)
       @excluded_columns.concat(patterns.map(&:to_s))
+    end
+
+    # Adds matching views to snapshots. Views are left out by default, because the changes of the tables behind them
+    # are recorded anyway. Include them to also notice changed view definitions, or data a view reads from tables
+    # that are not recorded. Included views are read in full on every snapshot, and compared as a multiset of rows,
+    # because they have no primary key. {#exclude_columns} applies to their columns, {#exclude_tables} does not.
+    #
+    # @param patterns [Array<String>] globs on +"<database>.<view>"+
+    # @return [void]
+    # @example
+    #   c.include_views "shop.order_totals", "billing.*"
+    def include_views(*patterns)
+      @included_views.concat(patterns.map(&:to_s))
     end
 
     # Wraps RSpec examples tagged +:tape_deck+ in a tape. The tape is named after the example's description hierarchy
