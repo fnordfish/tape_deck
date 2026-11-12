@@ -1,0 +1,57 @@
+name: Ruby
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Ruby ${{ matrix.ruby }}
+    strategy:
+      matrix:
+        ruby:
+          - '4.0.9'
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+      - name: Run the default task
+        run: bundle exec rake
+
+  mysql:
+    runs-on: ubuntu-latest
+    name: ${{ matrix.server }} (${{ matrix.adapter }})
+    strategy:
+      fail-fast: false
+      matrix:
+        server:
+          - mysql:8.4
+          - mariadb:11.4
+        adapter:
+          - mysql2
+          - trilogy
+    env:
+      MYSQL_IMAGE: ${{ matrix.server }}
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Run the specs against MySQL
+        run: docker compose -f .devcontainer/compose.yml run --rm app sh -c "bundle install && bundle exec rake spec:${{ matrix.adapter }}"
+      - name: Stop MySQL
+        if: always()
+        run: docker compose -f .devcontainer/compose.yml down --volumes

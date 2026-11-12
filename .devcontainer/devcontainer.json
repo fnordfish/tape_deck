@@ -1,0 +1,13 @@
+{
+  "name": "tape_deck",
+  "dockerComposeFile": "compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/tape_deck",
+  "shutdownAction": "stopCompose",
+  "postCreateCommand": "bundle install",
+  "customizations": {
+    "vscode": {
+      "extensions": ["Shopify.ruby-lsp"]
+    }
+  }
+}

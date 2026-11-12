@@ -1,0 +1,33 @@
+name: tape_deck
+
+services:
+  app:
+    image: ruby:4.0
+    command: sleep infinity
+    working_dir: /workspaces/tape_deck
+    volumes:
+      - ..:/workspaces/tape_deck
+      - bundle:/usr/local/bundle
+    environment:
+      BUNDLE_WITH: mysql
+      TZ: UTC
+      TAPE_DECK_MYSQL_URL: ${TAPE_DECK_MYSQL_URL:-mysql2://root:tape_deck@mysql}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mysql:
+    image: ${MYSQL_IMAGE:-mysql:8.4}
+    environment:
+      MYSQL_ROOT_PASSWORD: tape_deck
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      # MariaDB images only have mariadb-admin
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -ptape_deck || mariadb-admin ping -h 127.0.0.1 -ptape_deck"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  bundle:

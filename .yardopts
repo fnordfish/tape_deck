@@ -1,0 +1,7 @@
+--title TapeDeck
+--readme README.md
+lib/**/*.rb
+-
+CHANGELOG.md
+DEVELOPMENT.md
+LICENSE.txt
