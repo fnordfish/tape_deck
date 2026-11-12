@@ -221,7 +221,7 @@ module TapeDeck
       compact("inserted" => sort_rows(inserted), "deleted" => sort_rows(deleted))
     end
 
-    def sort_rows(rows) = rows.sort_by(&:inspect)
+    def sort_rows(rows) = Rows.sort(rows)
     def compact(h) = h.reject { |_, v| v.empty? }
   end
 end

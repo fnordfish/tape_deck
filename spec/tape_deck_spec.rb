@@ -101,6 +101,17 @@ RSpec.describe TapeDeck do
       expect(described_class.current_tape).to be_nil
     end
 
+    it "ignores the order of rows on the tape" do
+      shop.create_table(:tags) { String :name }
+      described_class.use_tape("tags") { %w[c a b].each { shop[:tags].insert(name: _1) } }
+      content = YAML.safe_load_file(tape_file("tags"))
+      content.dig("diff", "shop", "tags", "inserted").reverse!
+      File.write(tape_file("tags"), TapeDeck::Tape.dump(content))
+      reset_tables(shop, :tags)
+
+      expect { described_class.use_tape("tags") { %w[b c a].each { shop[:tags].insert(name: _1) } } }.not_to raise_error
+    end
+
     it "overwrites a tape under record mode :overwrite" do
       described_class.use_tape("checkout") { checkout }
       reset_databases

@@ -57,10 +57,4 @@ RSpec.describe TapeDeck::Filter do
 
     expect(filtered.dig("shop", "orders", "inserted")).to eq([{"id" => 1, "status" => "new"}, {"id" => 2, "status" => "new"}])
   end
-
-  it "sorts rows again after filtering" do
-    filtered = described_class.new(only: "shop.orders.note").apply(diff)
-
-    expect(filtered.dig("shop", "orders", "inserted")).to eq([{"note" => "a"}, {"note" => "b"}])
-  end
 end

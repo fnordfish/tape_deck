@@ -65,9 +65,17 @@ module TapeDeck
       report_schema_changes(on_tape, by_recorded_rules)
       ignored = newly_excluded(on_tape, current) + changed_views(on_tape, current, by_recorded_rules)
       filter = @filter.ignoring(ignored)
-      expected = filter.apply(tape.read.fetch("diff").slice(*current.keys))
-      actual = filter.apply(actual)
+      expected = in_stable_order(filter.apply(tape.read.fetch("diff").slice(*current.keys)))
+      actual = in_stable_order(filter.apply(actual))
       raise UnexpectedDiffError.new(tape, expected, actual) unless expected == actual
+    end
+
+    # The order of rows on a tape is for reading only, so it must not decide whether the tape matches. Filtered rows
+    # need it too, because their order may have depended on values that are ignored now.
+    def in_stable_order(diff)
+      diff.transform_values do |tables|
+        tables.transform_values { |changes| changes.transform_values { Rows.sort(_1) } }
+      end
     end
 
     # The recorded rules, applied to the current schema, must leave out and include what they did when recording.

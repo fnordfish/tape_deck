@@ -43,10 +43,9 @@ module TapeDeck
       kept.reject { |_, entries| entries.empty? }
     end
 
-    # Rows are sorted again, because their recorded order may depend on values that are now ignored.
     def filter_rows(table_name, rows)
       kept = rows.map { |row| filter_columns(table_name, row) }
-      kept.reject(&:empty?).sort_by(&:inspect)
+      kept.reject(&:empty?)
     end
 
     # The "key" of an update is kept as it is, because it identifies the row.
