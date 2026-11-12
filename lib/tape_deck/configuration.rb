@@ -36,6 +36,9 @@ module TapeDeck
     # @return [Array<String>] patterns added with {#include_views}
     attr_reader :included_views
 
+    # @return [Array<String>] patterns added with {#keep_new_ids}
+    attr_reader :kept_new_ids
+
     def initialize
       @tape_library_dir = "spec/db_tapes"
       @databases = {}
@@ -44,6 +47,7 @@ module TapeDeck
       @excluded_tables = []
       @excluded_columns = []
       @included_views = []
+      @kept_new_ids = []
     end
 
     # @param mode [Symbol] one of {Tape::RECORD_MODES}
@@ -95,6 +99,17 @@ module TapeDeck
     #   c.include_views "shop.order_totals", "billing.*"
     def include_views(*patterns)
       @included_views.concat(patterns.map(&:to_s))
+    end
+
+    # Keeps the generated ids of rows inserted into matching tables, instead of replacing them with placeholders.
+    # See "New rows" in {TapeDeck}.
+    #
+    # @param patterns [Array<String>] globs on +"<database>.<table>"+
+    # @return [void]
+    # @example
+    #   c.keep_new_ids "shop.audit_log"
+    def keep_new_ids(*patterns)
+      @kept_new_ids.concat(patterns.map(&:to_s))
     end
 
     # Wraps RSpec examples tagged +:tape_deck+ in a tape. The tape is named after the example's description hierarchy

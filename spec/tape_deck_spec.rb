@@ -54,12 +54,12 @@ RSpec.describe TapeDeck do
           billing:
             invoices:
               inserted:
-              - id: 1
+              - id: new billing.invoices 1
                 order_id: 1
           shop:
             orders:
               inserted:
-              - id: 1
+              - id: new shop.orders 1
                 status: new
                 note: "n"
       YAML
@@ -344,6 +344,99 @@ RSpec.describe TapeDeck do
 
         expect { described_class.use_tape("checkout") { checkout } }.to output(/shop views: added/).to_stderr
       end
+    end
+  end
+
+  describe "new rows" do
+    before do
+      shop.create_table(:items) do
+        primary_key :id
+        foreign_key :order_id, :orders
+        String :sku
+      end
+      shop.create_table(:customers) do
+        primary_key :id
+        foreign_key :last_order_id, :orders
+      end
+      shop.create_table(:skus) do
+        String :code, primary_key: true
+      end
+      shop[:customers].insert(id: 1)
+    end
+
+    def order_with_items(*skus, status: "new")
+      order_id = shop[:orders].insert(status: status)
+      skus.each { shop[:items].insert(order_id: order_id, sku: _1) }
+      order_id
+    end
+
+    # SQLite keeps counting after rows are deleted, like MySQL and PostgreSQL after a rollback
+    def move_counters
+      2.times { order_with_items("x") }
+      shop[:items].delete
+      shop[:orders].delete
+    end
+
+    it "replaces new ids and declared references with placeholders" do
+      described_class.use_tape("order") { order_with_items("a", "b") }
+
+      expect(tape_diff("order").fetch("shop")).to eq(
+        "orders" => {"inserted" => [{"id" => "new shop.orders 1", "status" => "new", "note" => nil}]},
+        "items" => {
+          "inserted" => [
+            {"id" => "new shop.items 1", "order_id" => "new shop.orders 1", "sku" => "a"},
+            {"id" => "new shop.items 2", "order_id" => "new shop.orders 1", "sku" => "b"}
+          ]
+        }
+      )
+    end
+
+    it "verifies, wherever the counters stand" do
+      described_class.use_tape("order") { order_with_items("a", "b") }
+      move_counters
+
+      expect { described_class.use_tape("order") { order_with_items("a", "b") } }.not_to raise_error
+    end
+
+    it "numbers rows in creation order, so a different order is noticed" do
+      described_class.use_tape("orders") { order_with_items(status: "a") && order_with_items(status: "b") }
+      move_counters
+
+      expect { described_class.use_tape("orders") { order_with_items(status: "b") && order_with_items(status: "a") } }
+        .to raise_error(TapeDeck::UnexpectedDiffError)
+    end
+
+    it "replaces references to new rows in updated values" do
+      described_class.use_tape("customer") do
+        shop[:customers].where(id: 1).update(last_order_id: order_with_items)
+      end
+
+      expect(tape_diff("customer").dig("shop", "customers", "updated")).to eq(
+        [{"key" => {"id" => 1}, "changes" => {"last_order_id" => [nil, "new shop.orders 1"]}}]
+      )
+    end
+
+    it "keeps ids of rows that existed before" do
+      existing = shop[:orders].insert(status: "old")
+      described_class.use_tape("item") { shop[:items].insert(order_id: existing, sku: "a") }
+
+      expect(tape_diff("item").dig("shop", "items", "inserted")).to eq(
+        [{"id" => "new shop.items 1", "order_id" => existing, "sku" => "a"}]
+      )
+    end
+
+    it "keeps keys the database does not generate" do
+      described_class.use_tape("sku") { shop[:skus].insert(code: "A-1") }
+
+      expect(tape_diff("sku").dig("shop", "skus", "inserted")).to eq([{"code" => "A-1"}])
+    end
+
+    it "keeps new ids of tables configured to keep them" do
+      described_class.configuration.keep_new_ids("shop.items")
+      move_counters
+      described_class.use_tape("order") { order_with_items("a") }
+
+      expect(tape_diff("order").dig("shop", "items", "inserted", 0)).to include("id" => 3, "order_id" => "new shop.orders 1")
     end
   end
 

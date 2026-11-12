@@ -101,6 +101,44 @@ module TapeDeck
       end
     end
 
+    # Generated keys of the tables the diff inserts rows into: a single primary key column the database fills in
+    # (auto increment). Views have none.
+    #
+    # @param diff [Hash] result of {#diff}
+    # @return [Hash{String => Hash{String => String}}] database -> table -> key column
+    def generated_keys(diff)
+      diff.to_h do |db_name, tables|
+        db = @dbs.fetch(db_name)
+        real_tables = db.tables.map(&:to_s)
+        keys = tables.filter_map do |table, changes|
+          next unless changes.key?("inserted") && real_tables.include?(table)
+
+          pk = db.schema(table.to_sym).select { |_, info| info[:primary_key] }
+          [table, pk.first.first.to_s] if pk.size == 1 && pk.first.last[:auto_increment]
+        end
+        [db_name, keys.to_h]
+      end
+    end
+
+    # Declared single column foreign keys of the tables in the diff.
+    #
+    # @param diff [Hash] result of {#diff}
+    # @return [Hash{String => Hash{String => Hash{String => Array(String, String)}}}] database -> table -> column ->
+    #   +[database, table]+ it references
+    def references(diff)
+      diff.to_h do |db_name, tables|
+        db = @dbs.fetch(db_name)
+        real_tables = db.tables.map(&:to_s)
+        references = tables.keys.select { real_tables.include?(_1) }.to_h do |table|
+          columns = db.foreign_key_list(table.to_sym).filter_map do |foreign_key|
+            [foreign_key[:columns].first.to_s, [db_name, foreign_key[:table].to_s]] if foreign_key[:columns].size == 1
+          end
+          [table, columns.to_h]
+        end
+        [db_name, references]
+      end
+    end
+
     # @param db_name [String]
     # @param name [String] +"<table>"+ or +"<table>.<column>"+, as returned by {#resolve}
     # @return [Boolean] whether the exclude rules leave this table or column out. Says nothing about primary keys,

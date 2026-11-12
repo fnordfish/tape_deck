@@ -15,6 +15,7 @@ require_relative "tape_deck/configuration"
 require_relative "tape_deck/tape"
 require_relative "tape_deck/patterns"
 require_relative "tape_deck/rows"
+require_relative "tape_deck/new_rows"
 require_relative "tape_deck/filter"
 require_relative "tape_deck/session"
 require_relative "tape_deck/adapters"
@@ -96,6 +97,25 @@ require_relative "tape_deck/recorder"
 # {Configuration#databases}. All rules below are glob patterns on these names (<tt>File.fnmatch</tt>, where +*+ also
 # matches dots), so +"*.created_at"+ matches that column in every table of every database, and +"shop.*"+ matches
 # everything in +shop+.
+#
+# == New rows
+#
+# The ids a database hands out depend on where its counters stand, and those move with every insert, also with ones
+# that were rolled back. So a tape doesn't store the generated keys of inserted rows. It numbers them per table in the
+# order the rows were created, and stores placeholders like +"new shop.orders 1"+. Declared foreign keys to those rows
+# get the same placeholder, in inserted rows and in updated values. Ids of rows that existed before stay as they are.
+#
+#   orders:
+#     inserted:
+#     - id: new shop.orders 1
+#   items:
+#     inserted:
+#     - id: new shop.items 1
+#       order_id: new shop.orders 1
+#
+# A key is generated if it is the single, auto increment primary key of its table. Rows are numbered in creation
+# order, so creating the same rows in a different order fails verification. {Configuration#keep_new_ids} keeps the
+# real ids of some tables.
 #
 # == Views
 #
@@ -246,7 +266,8 @@ module TapeDeck
         include_views: configuration.included_views
       )
       filter = Filter.new(only: only, ignore: ignore)
-      sessions.push(Session.new(tape, recorder, filter, on_schema_change: configuration.on_schema_change))
+      new_rows = NewRows.new(recorder, keep: configuration.kept_new_ids)
+      sessions.push(Session.new(tape, recorder, filter, on_schema_change: configuration.on_schema_change, new_rows: new_rows))
       tape
     end
 

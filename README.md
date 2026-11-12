@@ -129,6 +129,22 @@ Since a tape stores its rules, verifying also notices schema changes: when the r
 
 Primary key columns are never excluded, because rows are matched by them. Tables without a primary key are compared as a multiset of rows.
 
+### New rows
+
+Generated ids depend on where the database's counters stand, and those move with every insert, also with ones a test rolled back. So tapes store placeholders instead, numbered per table in the order the rows were created:
+
+```yaml
+orders:
+  inserted:
+  - id: new shop.orders 1
+items:
+  inserted:
+  - id: new shop.items 1
+    order_id: new shop.orders 1
+```
+
+Declared foreign keys to new rows get the same placeholder. Ids of rows that existed before stay as they are. To keep the real ids of a table, use `c.keep_new_ids "shop.audit_log"`.
+
 ### Views
 
 Views are left out, because the changes of the tables behind them are on the tape anyway. Include them to also notice a changed view definition:
@@ -153,7 +169,7 @@ PostgreSQL tables are seen through the search path, like Sequel's `db.tables` do
 
 ### Things to know
 
-* Your databases need the same starting state on every run. Auto increment ids and existing rows end up on the tape.
+* Rows that exist before the action end up on the tape when it changes them, so your databases need the same starting rows on every run. Where the id counters stand doesn't matter.
 * Anything the action does asynchronously must finish inside the block, or only part of it is captured.
 * When verifying, a tape watches the databases it was recorded with. `databases:` can narrow that down, but can't add a database the tape has no recording of.
 

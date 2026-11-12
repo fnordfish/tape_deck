@@ -52,7 +52,7 @@ RSpec.describe TapeDeck::Configuration do
       end
 
       expect(failure).to be_nil
-      expect(tape("Checkout/ordering/creates_an_order").dig("shop", "orders", "inserted")).to eq([{"id" => 1, "status" => "new"}])
+      expect(tape("Checkout/ordering/creates_an_order").dig("shop", "orders", "inserted")).to eq([{"id" => "new shop.orders 1", "status" => "new"}])
     end
 
     it "passes options and a custom tape name" do

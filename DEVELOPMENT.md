@@ -27,6 +27,7 @@ Decisions made on purpose. Please don't undo them without discussing first:
 - **A tape stores what was recorded**: the exclude patterns (once, they are global), the watched databases, and the resolved names (`<table>`, `<table>.<column>`) the patterns left out of each.
   - A tape must cover the run that verifies it: the watched databases are a subset of the recorded ones, and everything the tape left out is still excluded under the current rules. What is excluded now but on the tape is dropped from both sides before comparing.
   - Schema changes: the recorded patterns, applied to the current schema, must resolve to the recorded names. A difference means a matching table or column was added or removed. `on_schema_change` decides between error, warning and nothing.
+- **New rows get placeholders**, `"new <database>.<table> <n>"`, numbered per table in creation order (sorted auto increment ids). Only single, auto increment primary keys count as generated, so natural keys like a SKU stay visible. Declared single column foreign keys get the same placeholder, in inserted rows and in updated values. Ids of rows that existed before stay literal. `NewRows` runs on both sides, after the diff is captured and before it is recorded or verified.
 - **Primary key columns are never excluded**, even if a pattern matches, because rows are matched by them.
 - **Snapshots reuse unchanged tables.** The adapter computes a checksum per table before and after: `CHECKSUM TABLE` on MySQL, the row count plus a sum of row hashes on PostgreSQL. A table whose checksum is unchanged reuses the first snapshot object, and `diff` skips it by identity (`equal?`). Without a checksum (SQLite, other databases), a table is read on every snapshot.
 - **Tables without a primary key** are compared as a multiset of rows (inserted / deleted only).
@@ -88,7 +89,6 @@ Ruby 3.2 to 4.0. On Ruby 3.2 and 4.0: MySQL 8.4 and MariaDB 11.4, each with the 
 
 ## Roadmap and open questions
 
-- Replace new auto increment ids with stable placeholders, so tapes don't depend on the starting state
 - Binary data that happens to be valid UTF-8 (short hashes, UUIDs) is shown as text
 - Checksums scan the whole table (`CHECKSUM TABLE`, the PostgreSQL checksum query). Fine for test databases, worth measuring for large ones.
 - PostgreSQL schemas other than the search path

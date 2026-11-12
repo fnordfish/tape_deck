@@ -13,11 +13,13 @@ module TapeDeck
     # @param recorder [Recorder]
     # @param filter [Filter] narrows what is compared when verifying
     # @param on_schema_change [Symbol] see {Configuration#on_schema_change}
-    def initialize(tape, recorder, filter, on_schema_change: :error)
+    # @param new_rows [NewRows] replaces the ids of new rows with placeholders
+    def initialize(tape, recorder, filter, on_schema_change: :error, new_rows: NewRows.new(recorder))
       @tape = tape
       @recorder = recorder
       @filter = filter
       @on_schema_change = on_schema_change
+      @new_rows = new_rows
       @before = recorder.snapshot
     end
 
@@ -31,7 +33,7 @@ module TapeDeck
       return if discard
 
       after = @recorder.snapshot(previous: @before)
-      actual = round_trip(@recorder.diff(@before, after))
+      actual = @new_rows.apply(round_trip(@recorder.diff(@before, after)))
       current = @recorder.resolve
       if tape.recording?
         tape.write(actual, recorded: {

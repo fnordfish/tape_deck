@@ -35,7 +35,8 @@ RSpec.shared_examples "a database server" do
   def reset_databases
     dbs.each_value do |db|
       db.views.each { db.drop_view(_1) }
-      db.tables.each { db.drop_table(_1) }
+      # Tables with foreign keys first, so nothing references a dropped table
+      db.tables.sort_by { db.foreign_key_list(_1).empty? ? 1 : 0 }.each { db.drop_table(_1) }
     end
     shop.create_table(:orders) do
       primary_key :id
@@ -105,15 +106,52 @@ RSpec.shared_examples "a database server" do
     end
   end
 
+  describe "new rows" do
+    def create_items
+      shop.create_table(:items) do
+        primary_key :id
+        foreign_key :order_id, :orders
+        String :sku
+      end
+    end
+
+    def order_with_items
+      order_id = shop[:orders].insert(status: "new")
+      %w[a b].each { shop[:items].insert(order_id: order_id, sku: _1) }
+    end
+
+    before { create_items }
+
+    it "are numbered, and so are their declared references" do
+      TapeDeck.use_tape("order") { order_with_items }
+
+      expect(YAML.safe_load_file(tape_file("order")).dig("diff", "shop", "items", "inserted")).to eq([
+        {"id" => "new shop.items 1", "order_id" => "new shop.orders 1", "sku" => "a"},
+        {"id" => "new shop.items 2", "order_id" => "new shop.orders 1", "sku" => "b"}
+      ])
+    end
+
+    it "verify wherever the counters stand" do
+      TapeDeck.use_tape("order") { order_with_items }
+      reset_databases
+      create_items
+      3.times { order_with_items }
+      shop[:items].delete
+      shop[:orders].exclude(id: 1).delete
+
+      expect { TapeDeck.use_tape("order") { order_with_items } }.not_to raise_error
+    end
+  end
+
   describe ".use_tape" do
     it "records changes across databases" do
       TapeDeck.use_tape("checkout") { checkout }
 
       expect(YAML.safe_load_file(tape_file("checkout")).fetch("diff")).to eq(
-        "billing" => {"invoices" => {"inserted" => [{"id" => 1, "order_id" => 2}]}},
+        "billing" => {"invoices" => {"inserted" => [{"id" => "new billing.invoices 1", "order_id" => 2}]}},
         "shop" => {
           "orders" => {
-            "inserted" => [{"id" => 2, "status" => "new", "note" => "n"}],
+            "inserted" => [{"id" => "new shop.orders 1", "status" => "new", "note" => "n"}],
             "updated" => [{"key" => {"id" => 1}, "changes" => {"status" => %w[new paid]}}]
           },
           "tags" => {"deleted" => [{"name" => "x"}]}
