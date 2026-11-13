@@ -125,6 +125,16 @@ RSpec.describe "Checkout" do
 end
 ```
 
+### Turning TapeDeck off
+
+To run your suite without TapeDeck, for example to save the time snapshots take:
+
+```ruby
+TapeDeck.turn_off! if ENV["TAPE_DECK"] == "off"
+```
+
+While it's off, `use_tape` only runs its block and tagged examples just run. No database is read, and no tape is read, written or verified. `TapeDeck.turn_on!` turns it back on, `TapeDeck.turned_off { ... }` turns it off for a block.
+
 ### Excluding and ignoring
 
 Names are `"<database>.<table>"` and `"<database>.<table>.<column>"`, matched as globs.

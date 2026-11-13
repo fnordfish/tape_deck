@@ -32,6 +32,7 @@ RSpec.configure do |config|
     Dir.mktmpdir("tape_deck") do |dir|
       TapeDeck.instance_variable_set(:@configuration, nil)
       TapeDeck.instance_variable_set(:@sessions, nil)
+      TapeDeck.instance_variable_set(:@turned_off, nil)
       TapeDeck.configuration.tape_library_dir = dir
       example.run
     end

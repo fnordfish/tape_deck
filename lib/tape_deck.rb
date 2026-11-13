@@ -82,6 +82,14 @@ require_relative "tape_deck/recorder"
 #     end
 #   end
 #
+# == Turning TapeDeck off
+#
+# {TapeDeck.turn_off!} turns everything off: {TapeDeck.use_tape} only runs its block, and tagged RSpec examples just
+# run. No snapshots are taken, and no tapes are read, written or verified, so a missing tape is no error either.
+# {TapeDeck.turn_on!} turns it back on, {TapeDeck.turned_off} turns it off while a block runs.
+#
+#   TapeDeck.turn_off! if ENV["TAPE_DECK"] == "off"
+#
 # == Selecting databases
 #
 # When recording, a tape watches all configured databases by default. Pass +databases:+ to watch only some of them.
@@ -219,8 +227,43 @@ module TapeDeck
       yield configuration
     end
 
+    # Turns TapeDeck off: until {.turn_on!}, inserting a tape does nothing, so {.use_tape} only runs its block and
+    # tagged RSpec examples just run. No snapshots are taken and no tapes are read, written or verified. See "Turning
+    # TapeDeck off" in {TapeDeck}.
+    #
+    # @return [void]
+    # @raise [Error] if a tape is inserted, because it could not be ejected properly
+    def turn_off!
+      raise Error, "eject tape #{current_tape.name.inspect} before turning TapeDeck off" if current_tape
+
+      @turned_off = true
+    end
+
+    # Turns TapeDeck back on after {.turn_off!}.
+    #
+    # @return [void]
+    def turn_on!
+      @turned_off = false
+    end
+
+    # @return [Boolean] whether tapes are recorded and verified, see {.turn_off!}
+    def turned_on? = !@turned_off
+
+    # Turns TapeDeck off while the block runs, see {.turn_off!}. Afterwards it is on or off, as it was before.
+    #
+    # @yield the code to run without tapes
+    # @return [Object] the block's return value
+    # @raise [Error] if a tape is inserted
+    def turned_off
+      was_on = turned_on?
+      turn_off!
+      yield
+    ensure
+      @turned_off = !was_on
+    end
+
     # Records or verifies the database changes made by the block. If the block raises, the tape is neither recorded
-    # nor verified and the error propagates.
+    # nor verified and the error propagates. While TapeDeck is turned off, this only runs the block, see {.turn_off!}.
     #
     # @param name [String] tape name, e.g. +"checkout/creates_order"+
     # @param options [Hash] keyword options, see {.insert_tape}
@@ -256,7 +299,7 @@ module TapeDeck
     #   "Excluding and ignoring" in {TapeDeck}.
     # @param ignore [Array<String>, String, nil] patterns for what not to compare when verifying
     # @param options [Hash] keyword options, see {Tape#initialize}
-    # @return [Tape]
+    # @return [Tape, nil] the tape, nil while TapeDeck is turned off (see {.turn_off!})
     # @raise [ArgumentError] for a database name that is not configured
     # @raise (see Tape#initialize)
     # @example Insert and eject manually, the way {.use_tape} does
@@ -269,6 +312,8 @@ module TapeDeck
     #   end
     #   TapeDeck.eject_tape
     def insert_tape(name, databases: nil, only: nil, ignore: nil, **options)
+      return unless turned_on?
+
       tape = Tape.new(name, **options)
       recorder = Recorder.new(
         select_databases(tape_databases(tape, databases)),

@@ -577,6 +577,59 @@ RSpec.describe TapeDeck do
     end
   end
 
+  describe "turning off" do
+    it "only runs the block of use_tape, without touching a database or a tape" do
+      described_class.turn_off!
+      expect(shop).not_to receive(:tables)
+      expect(billing).not_to receive(:tables)
+
+      result = described_class.use_tape("checkout", record: :verify) { checkout }
+
+      expect(result).to eq(1)
+      expect(File.exist?(tape_file("checkout"))).to be(false)
+      expect(described_class).not_to be_turned_on
+    end
+
+    it "makes insert_tape and eject_tape do nothing" do
+      described_class.turn_off!
+
+      expect(described_class.insert_tape("checkout")).to be_nil
+      expect(described_class.current_tape).to be_nil
+      expect(described_class.eject_tape).to be_nil
+    end
+
+    it "records again after turning back on" do
+      described_class.turn_off!
+      described_class.turn_on!
+      described_class.use_tape("checkout") { checkout }
+
+      expect(File.exist?(tape_file("checkout"))).to be(true)
+    end
+
+    it "is off only for the block of turned_off, and back to how it was afterwards" do
+      expect(described_class.turned_off { described_class.turned_on? }).to be(false)
+      expect(described_class).to be_turned_on
+
+      described_class.turn_off!
+      described_class.turned_off {}
+      expect(described_class).not_to be_turned_on
+    end
+
+    it "is back on after the block of turned_off raises" do
+      expect { described_class.turned_off { raise "boom" } }.to raise_error("boom")
+
+      expect(described_class).to be_turned_on
+    end
+
+    it "refuses while a tape is inserted" do
+      described_class.insert_tape("checkout")
+
+      expect { described_class.turn_off! }.to raise_error(TapeDeck::Error, /eject tape "checkout"/)
+      expect { described_class.turned_off {} }.to raise_error(TapeDeck::Error)
+      expect(described_class).to be_turned_on
+    end
+  end
+
   describe "nested tapes" do
     it "records the inner changes on both tapes" do
       described_class.use_tape("outer") do

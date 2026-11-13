@@ -68,6 +68,16 @@ RSpec.describe TapeDeck::Configuration do
       expect(tape("orders/create").dig("shop", "orders", "inserted", 0, "status")).to eq("b")
     end
 
+    it "just runs tagged examples while TapeDeck is turned off" do
+      orders = db[:orders]
+      TapeDeck.turn_off!
+      failure = run_group { it("creates an order", :tape_deck) { orders.insert(status: "new") } }
+
+      expect(failure).to be_nil
+      expect(orders.count).to eq(1)
+      expect(Dir.glob("#{tape_dir}/**/*.yml")).to be_empty
+    end
+
     it "discards the tape when the example fails" do
       orders = db[:orders]
       failure = run_group do

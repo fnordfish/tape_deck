@@ -2,7 +2,7 @@
 
 ## 0.2.0.dev
 
-nothing yet
+- Add: `TapeDeck.turn_off!`, `turn_on!`, `turned_on?` and `turned_off { }`, to run without TapeDeck. While it's off, `use_tape` only runs its block and tagged RSpec examples just run, without touching a database or a tape.
 
 ## 0.1.0
 
