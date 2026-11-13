@@ -1,5 +1,23 @@
 # Changes
 
+## 0.1.0
+
+- Breaking: tapes recorded with 0.1.0.beta1 need re-recording. Their information section is now called `tape_deck`, and ids of new rows are stored as placeholders.
+- Breaking: generated ids of inserted rows are stored as placeholders like `new shop.orders 1`, numbered per table in creation order, and so are declared foreign keys to them. Tapes no longer depend on where the database's counters stand. `keep_new_ids` keeps real ids.
+  - `number_by_content` numbers a table's new rows by content, when creation order doesn't matter, like for an import
+  - `references_to` adds references across databases and ones without a foreign key
+  - `generated_keys` adds generated keys that aren't auto increment, like UUIDs
+- Add: PostgreSQL support, and SQLite as a supported database. Database specific code lives in adapters, picked by Sequel's database type. Other databases Sequel supports read every table on every snapshot.
+- Add: opt-in views with `include_views`
+- Add: tapes store the TapeDeck version and the new-row numbering rules. Verifying uses the tape's numbering rules, not the current configuration.
+- Add: the RSpec hook fails the suite when tagged examples would share a tape, like the same description in a loop
+- Fix: the order of rows on a tape no longer depends on Ruby's `inspect` format, which changes between Ruby versions. Verifying also ignores the row order on the tape.
+- Change: values of unknown types, like from Sequel's `pg_json` or `pg_array` extensions, become plain Hashes, Arrays or Strings
+- Internal housekeeping
+  - API docs on GitHub Pages, for `main` and every release
+  - CI tests Ruby 3.2 to 4.0 and head, MySQL 8.4 and MariaDB 11.4 with `mysql2`, `trilogy` and `ruby-mysql`, and PostgreSQL 15 and 18
+  - Gemfile.lock is no longer tracked
+
 ## 0.1.0.beta1
 
 - First beta. The API and the tape format may still change.

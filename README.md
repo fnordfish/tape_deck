@@ -2,14 +2,11 @@
 
 Records what an action changes in your databases, and checks later runs against that recording.
 
-[![Gem Version](https://img.shields.io/gem/v/tape_deck?include_prereleases)][gem]
+[![Gem Version](https://img.shields.io/gem/v/tape_deck)][gem]
 [![Build Status](https://github.com/fnordfish/tape_deck/actions/workflows/main.yml/badge.svg)][ci]
 [![API Docs](https://img.shields.io/badge/docs-API-blue)][docs]
 
 **[API documentation][docs]**
-
-> [!NOTE]
-> TapeDeck is in beta. The API and the tape format may still change, which can mean re-recording your tapes.
 
 You run a command or request against a black-box project. TapeDeck snapshots all configured databases before and after, and stores the row-level diff as a YAML file, a "tape". On later runs the same action must cause the same diff, so you notice when a project changes its behaviour after an update.
 
@@ -19,17 +16,17 @@ Works with [Sequel](https://sequel.jeremyevans.net) and MySQL, MariaDB, PostgreS
 
 ## Installation
 
-Add this line to your application's Gemfile. While TapeDeck is in beta, the version requirement is needed, because Bundler skips prerelease versions without it:
+Add this line to your application's Gemfile:
 
 ```ruby
-gem "tape_deck", "~> 0.1.0.beta1", group: :test
+gem "tape_deck", "~> 0.1.0", group: :test
 ```
 
 Or get it from [gem.coop](https://gem.coop):
 
 ```ruby
 source "https://gem.coop/@fnordfish" do
-  gem "tape_deck", "~> 0.1.0.beta1", group: :test
+  gem "tape_deck", "~> 0.1.0", group: :test
 end
 ```
 
@@ -60,7 +57,7 @@ The first run writes `spec/db_tapes/checkout/creates_order.yml`:
 
 ```yaml
 tape_deck:
-  version: 0.1.0.beta1
+  version: 0.1.0
   exclude_tables: [shop.sessions, "*.schema_migrations"]
   exclude_columns: ["*.created_at", "*.updated_at"]
   databases:
@@ -201,6 +198,7 @@ PostgreSQL tables are seen through the search path, like Sequel's `db.tables` do
 * Rows that exist before the action end up on the tape when it changes them, so your databases need the same starting rows on every run. Where the id counters stand doesn't matter.
 * Anything the action does asynchronously must finish inside the block, or only part of it is captured.
 * When verifying, a tape watches the databases it was recorded with. `databases:` can narrow that down, but can't add a database the tape has no recording of.
+* Until 1.0, a minor version (0.2, 0.3, ...) may change the tape format. The CHANGELOG says when tapes need re-recording.
 
 The [API docs][docs] have the full story.
 
