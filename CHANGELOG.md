@@ -1,5 +1,9 @@
 # Changes
 
+## 0.2.0.dev
+
+nothing yet
+
 ## 0.1.0
 
 - Breaking: tapes recorded with 0.1.0.beta1 need re-recording. Their information section is now called `tape_deck`, and ids of new rows are stored as placeholders.

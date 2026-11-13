@@ -81,8 +81,11 @@ The Docs workflow runs `docs:pages` on every version tag, and on pushes to `main
 
 Releases go to rubygems.org and to the `@fnordfish` namespace on [gem.coop](https://gem.coop).
 
-1. Bump `TapeDeck::VERSION` and add a CHANGELOG entry
+Between releases, `TapeDeck::VERSION` is the next version with `.dev` appended, e.g. `0.2.0.dev`, and the CHANGELOG collects changes under that next version. Tapes store the version that recorded them, so tapes recorded with unreleased code say so.
+
+1. Drop the `.dev` from `TapeDeck::VERSION`, and check the CHANGELOG entry
 2. `GEM_COOP_API_KEY=<push key> bundle exec rake release`
+3. Set `TapeDeck::VERSION` to the next version with `.dev`, and add its CHANGELOG heading
 
 `release` tags, pushes to rubygems.org, then runs `release:gem_coop`. If the gem.coop push fails, run `bundle exec rake release:gem_coop` again on its own. Push keys come from <https://gem.coop/user/push_keys/new>.
 
