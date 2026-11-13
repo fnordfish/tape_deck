@@ -38,6 +38,8 @@ module TapeDeck
     # @api private
     def self.differ
       @differ ||= begin
+        # The differ expects rspec/support loaded, which RSpec does, but other test frameworks and scripts don't
+        require "rspec/support"
         require "rspec/support/differ"
         ::RSpec::Support::Differ.new.method(:diff)
       rescue LoadError
