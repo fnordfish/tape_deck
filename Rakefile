@@ -3,7 +3,8 @@
 require "bundler/gem_tasks"
 require "rspec/core/rake_task"
 
-MYSQL_ADAPTERS = %w[mysql2 trilogy].freeze
+# Gem -> the Sequel adapter that uses it, which is also the scheme of its database URLs
+MYSQL_ADAPTERS = {"mysql2" => "mysql2", "trilogy" => "trilogy", "ruby-mysql" => "mysql"}.freeze
 
 namespace :spec do
   desc "Run the specs that need no database server, on SQLite"
@@ -13,9 +14,9 @@ namespace :spec do
     t.rspec_opts = "--tag '~mysql' --tag '~postgres'"
   end
 
-  MYSQL_ADAPTERS.each do |adapter|
-    desc "Run the MySQL specs with #{adapter}, needs TAPE_DECK_MYSQL_URL"
-    task adapter do
+  MYSQL_ADAPTERS.each do |gem_name, adapter|
+    desc "Run the MySQL specs with #{gem_name}, needs TAPE_DECK_MYSQL_URL"
+    task gem_name do
       server_url = ENV.fetch("TAPE_DECK_MYSQL_URL") { abort "Set TAPE_DECK_MYSQL_URL, see DEVELOPMENT.md" }
       adapter_url = server_url.sub(%r{\A\w+://}, "#{adapter}://")
       sh({"TAPE_DECK_MYSQL_URL" => adapter_url}, "rspec", "--tag", "mysql")
@@ -33,7 +34,7 @@ desc "Run all specs, the database server ones if their URL is set (MySQL with ev
 task :spec do
   Rake::Task["spec:sqlite"].invoke
   if ENV["TAPE_DECK_MYSQL_URL"]
-    MYSQL_ADAPTERS.each { Rake::Task["spec:#{_1}"].invoke }
+    MYSQL_ADAPTERS.each_key { Rake::Task["spec:#{_1}"].invoke }
   else
     warn "Skipping the MySQL specs, TAPE_DECK_MYSQL_URL is not set"
   end

@@ -19,6 +19,7 @@ gem "yard"
 group :mysql, optional: true do
   gem "mysql2"
   gem "trilogy"
+  gem "ruby-mysql"
 end
 
 group :postgres, optional: true do

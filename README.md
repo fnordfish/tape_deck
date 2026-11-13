@@ -179,7 +179,7 @@ Included views are read in full on every snapshot, and compared as a multiset of
 
 | Database | Tested with | Unchanged tables |
 | --- | --- | --- |
-| MySQL, MariaDB | MySQL 8.4 and MariaDB 11.4, `mysql2` and `trilogy` adapters | skipped, using `CHECKSUM TABLE` |
+| MySQL, MariaDB | MySQL 8.4 and MariaDB 11.4, `mysql2`, `trilogy` and `ruby-mysql` gems | skipped, using `CHECKSUM TABLE` |
 | PostgreSQL | PostgreSQL 15 and 18, `pg` adapter | skipped, using a checksum computed on the server |
 | SQLite | `sqlite3` adapter | read again on every snapshot |
 

@@ -52,12 +52,12 @@ Decisions made on purpose. Please don't undo them without discussing first:
 
 - `bundle exec rake spec` runs everything: the SQLite specs, then the MySQL specs once per adapter if `TAPE_DECK_MYSQL_URL` is set, and the PostgreSQL specs if `TAPE_DECK_POSTGRES_URL` is set
 - `bundle exec rake spec:sqlite` needs no server. In-memory SQLite through Sequel, using the real SQLite adapter.
-- `bundle exec rake spec:mysql2` / `spec:trilogy` run `spec/integration/mysql_spec.rb` (tagged `:mysql`) with that adapter
+- `bundle exec rake spec:mysql2` / `spec:trilogy` / `spec:ruby-mysql` run `spec/integration/mysql_spec.rb` (tagged `:mysql`) with that gem, through Sequel's `mysql2`, `trilogy` and `mysql` adapters
 - `bundle exec rake spec:postgres` runs `spec/integration/postgres_spec.rb` (tagged `:postgres`)
 
 Both server specs include the shared examples in `spec/support/server_examples.rb`, and add their own value types. The adapters' checksum queries are also covered by the SQLite run, through Sequel's mock databases (`spec/tape_deck/adapters_spec.rb`).
 
-`TAPE_DECK_MYSQL_URL` and `TAPE_DECK_POSTGRES_URL` are server URLs without a database, e.g. `mysql2://root:tape_deck@mysql` and `postgres://postgres:tape_deck@postgres`. The MySQL adapter tasks replace the scheme with their own. The server specs create and drop `tape_deck_shop` and `tape_deck_billing`.
+`TAPE_DECK_MYSQL_URL` and `TAPE_DECK_POSTGRES_URL` are server URLs without a database, e.g. `mysql2://root:tape_deck@mysql` and `postgres://postgres:tape_deck@postgres`. The MySQL tasks replace the scheme with their Sequel adapter's (`mysql://` for ruby-mysql). The server specs create and drop `tape_deck_shop` and `tape_deck_billing`.
 
 The devcontainer (`.devcontainer/`) has Ruby, MySQL 8.4 and PostgreSQL 18, with both URLs already set. Without VS Code:
 
@@ -65,7 +65,7 @@ The devcontainer (`.devcontainer/`) has Ruby, MySQL 8.4 and PostgreSQL 18, with 
 
 Set `MYSQL_IMAGE` for another MySQL server, e.g. `MYSQL_IMAGE=mariadb:11.4`, `POSTGRES_IMAGE` for another PostgreSQL, e.g. `POSTGRES_IMAGE=postgres:15`, and `RUBY_IMAGE` for another Ruby, e.g. `RUBY_IMAGE=ruby:3.2`.
 
-CI runs the default task on every supported Ruby and on Ruby head. In the devcontainer setup, on the oldest and newest supported Ruby, it runs `spec:mysql2` and `spec:trilogy` against MySQL 8.4 and MariaDB 11.4, and `spec:postgres` against PostgreSQL 15 and 18.
+CI runs the default task on every supported Ruby and on Ruby head. In the devcontainer setup, on the oldest and newest supported Ruby, it runs `spec:mysql2`, `spec:trilogy` and `spec:ruby-mysql` against MySQL 8.4 and MariaDB 11.4, and `spec:postgres` against PostgreSQL 15 and 18.
 
 The database adapters live in the optional `mysql` and `postgres` Gemfile groups (`BUNDLE_WITH=mysql:postgres`), because `mysql2` and `pg` may need client libraries to install.
 
@@ -87,7 +87,7 @@ Releases go to rubygems.org and to the `@fnordfish` namespace on [gem.coop](http
 
 ## Tested against
 
-Ruby 3.2 to 4.0. On Ruby 3.2 and 4.0: MySQL 8.4 and MariaDB 11.4, each with the `mysql2` and `trilogy` adapters, and PostgreSQL 15 and 18. SQLite with every supported Ruby. Other servers and versions may work, but are untested.
+Ruby 3.2 to 4.0. On Ruby 3.2 and 4.0: MySQL 8.4 and MariaDB 11.4, each with the `mysql2`, `trilogy` and `ruby-mysql` gems, and PostgreSQL 15 and 18. SQLite with every supported Ruby. Other servers and versions may work, but are untested.
 
 ## Roadmap and open questions
 

@@ -54,6 +54,7 @@ jobs:
         adapter:
           - mysql2
           - trilogy
+          - ruby-mysql
     env:
       RUBY_IMAGE: ruby:${{ matrix.ruby }}
       MYSQL_IMAGE: ${{ matrix.server }}
