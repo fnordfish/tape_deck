@@ -128,7 +128,7 @@ end
 
 Only the `client.post` is recorded, not `prepare_cart`. The options are the same as for tags, for example `TapeDeck.use_tape("checkout/creates_order", databases: ["shop"]) do ... end`. The name is the complete tape name.
 
-If the block raises an error, the tape is neither recorded nor verified, and the error goes on as usual.
+If the block raises an error, the tape is neither recorded nor verified, and the error goes on as usual. Leaving the block early with `return`, `break` or `next` is fine, the tape is recorded or verified as usual.
 
 Tapes can be nested. The outer tape then contains everything, including the changes of the inner one:
 

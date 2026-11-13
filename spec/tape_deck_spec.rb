@@ -121,6 +121,34 @@ RSpec.describe TapeDeck do
       expect(tape_diff("checkout").dig("shop", "orders", "inserted", 0, "status")).to eq("paid")
     end
 
+    describe "with a block left early" do
+      def returning(status) = described_class.use_tape("return") { checkout(status: status) && (return :early) }
+
+      def breaking(status) = [1].each { described_class.use_tape("break") { checkout(status: status) && break } }
+
+      it "records with return, break and next" do
+        expect(returning("new")).to eq(:early)
+        reset_databases
+        breaking("new")
+        reset_databases
+        described_class.use_tape("next") { next checkout }
+
+        expect(%w[return break next].map { File.exist?(tape_file(_1)) }).to eq([true, true, true])
+      end
+
+      it "verifies too" do
+        returning("new")
+        reset_databases
+        breaking("new")
+        reset_databases
+
+        expect { returning("paid") }.to raise_error(TapeDeck::UnexpectedDiffError)
+        reset_databases
+        expect { breaking("paid") }.to raise_error(TapeDeck::UnexpectedDiffError)
+        expect(described_class.current_tape).to be_nil
+      end
+    end
+
     it "discards the tape when the block raises" do
       expect { described_class.use_tape("checkout") { checkout && raise("boom") } }.to raise_error("boom")
 

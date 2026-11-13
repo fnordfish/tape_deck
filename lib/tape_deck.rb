@@ -273,13 +273,15 @@ module TapeDeck
     # @raise [TapeLoadingError] if the tape must be verified but does not exist or cannot be read
     def use_tape(name, **options)
       insert_tape(name, **options)
-      completed = false
+      failed = false
       begin
-        result = yield
-        completed = true
-        result
+        yield
+      rescue Exception # rubocop:disable Lint/RescueException -- any error, also an interrupt, fails the action
+        failed = true
+        raise
       ensure
-        eject_tape(discard: !completed)
+        # Also when the block is left early with return, break or next: the action is done then too
+        eject_tape(discard: failed)
       end
     end
 
