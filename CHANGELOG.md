@@ -1,14 +1,14 @@
 # Changes
 
-## 0.2.0.dev
+## 0.2.0
 
-- Fix: leaving a `use_tape` block early with `return`, `break` or `next` silently discarded the tape, so it was neither recorded nor verified
-- Add: the RSpec integration works with RSpec 4.0.0.beta1, tested in CI next to RSpec 3
-- Breaking: in the RSpec tag, `tape_name:` renames only the level it is set on, so an example's `tape_name: "x"` inside `describe "Checkout"` is the tape `Checkout/x`. A leading `/` gives the complete name, like `tape_name: "/orders/create"`.
+- Breaking: in the RSpec tag, `tape_name:` renames only the level it is set on, so an example's `tape_name: "x"` inside `describe "Checkout"` is the tape `Checkout/x`. A leading `/` gives the complete name, like `tape_name: "/orders/create"`. To keep the name of an existing tape, add a leading `/` to its `tape_name:`.
 - Change: `tape_deck:` options set on example groups are merged down to their examples, key by key. Before, an example's own options replaced all of its groups' options.
+- Add: the RSpec integration works with RSpec 4.0.0.beta1, tested in CI next to RSpec 3
 - Add: a user guide in `guide/`, published with the API docs: getting started, every setting, writing tests, choosing what is compared, new rows and ids, every error message explained, and a glossary. The README is short now and links to it. Guide and API docs link to each other, and `rake docs:check` keeps those links working.
-- Fix: a tape that didn't match crashed with `NameError: uninitialized constant RSpec` outside of RSpec, like in Minitest or a script, instead of showing the diff
 - Add: `TapeDeck.turn_off!`, `turn_on!`, `turned_on?` and `turned_off { }`, to run without TapeDeck. While it's off, `use_tape` only runs its block and tagged RSpec examples just run, without touching a database or a tape.
+- Fix: leaving a `use_tape` block early with `return`, `break` or `next` silently discarded the tape, so it was neither recorded nor verified
+- Fix: a tape that didn't match crashed with `NameError: uninitialized constant RSpec` outside of RSpec, like in Minitest or a script, instead of showing the diff
 
 ## 0.1.0
 
