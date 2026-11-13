@@ -6,7 +6,8 @@ Records what an action changes in your databases, and checks later runs against 
 [![Build Status](https://github.com/fnordfish/tape_deck/actions/workflows/main.yml/badge.svg)][ci]
 [![API Docs](https://img.shields.io/badge/docs-API-blue)][docs]
 
-**[Guide](guide/index.md)**, **[API documentation][docs]**
+- **[Guide](guide/index.md)**
+- **[API documentation][docs]**
 
 You run a command or request against a black-box project. TapeDeck snapshots all configured databases before and after, and stores the row-level diff as a YAML file, a "tape". On later runs the same action must cause the same diff, so you notice when a project changes its behaviour after an update.
 
@@ -19,14 +20,14 @@ Works with [Sequel](https://sequel.jeremyevans.net) and MySQL, MariaDB, PostgreS
 Add this line to your application's Gemfile:
 
 ```ruby
-gem "tape_deck", "~> 0.1.0", group: :test
+gem "tape_deck", group: :test
 ```
 
 Or get it from [gem.coop](https://gem.coop):
 
 ```ruby
 source "https://gem.coop/@fnordfish" do
-  gem "tape_deck", "~> 0.1.0", group: :test
+  gem "tape_deck", group: :test
 end
 ```
 

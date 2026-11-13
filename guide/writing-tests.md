@@ -71,12 +71,12 @@ Every example needs its own tape. Before the first example runs, TapeDeck stops 
 
 ```ruby
 ["paid", "shipped"].each do |status|
-  it "creates an order", :tape_deck do ... end               # both would be "Checkout/creates an order"
+  it "creates an order", :tape_deck do ... end               # 💥 both are "Checkout/creates an order"
   it "creates an order (#{status})", :tape_deck do ... end   # each gets its own tape
 end
 ```
 
-`#{status}` puts the value of `status` into the text, so the two examples are named "creates an order (paid)" and "creates an order (shipped)".
+Lines marked with 💥 show what not to do, in this guide.
 
 ## Options on groups
 
@@ -158,7 +158,15 @@ end
 
 Examples tagged `:checkout_tape` then get a tape named after their description, in a `checkout` directory.
 
-Don't use `TapeDeck.use_tape("...") { example.run }` in a hook: a failing example doesn't raise an error out of `example.run`, so `use_tape` would record or verify the failed example as if it had passed.
+Don't use `use_tape` in a hook:
+
+```ruby
+config.around(:each, :checkout_tape) do |example|
+  TapeDeck.use_tape("checkout/#{example.description}") { example.run }   # 💥 records failed examples too
+end
+```
+
+A failing example doesn't raise an error out of `example.run`, so `use_tape` would record or verify the failed example as if it had passed.
 
 `insert_tape` and `eject_tape` work like opening and closing a file by hand: you're responsible for closing. If the action fails, eject with `discard: true`. If ejecting an inner tape raises an error, that tape is ejected anyway, but outer tapes stay inserted, eject them too.
 

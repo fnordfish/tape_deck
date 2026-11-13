@@ -86,6 +86,7 @@ Linking rules:
 - Guide pages link to each other with plain relative `.md` links, and end with "Previous" and "Next" links in reading order.
 - Guide pages link to the API with full URLs into `https://fnordfish.github.io/tape_deck/docs/latest/`, like `.../TapeDeck/Configuration.html#exclude_columns-instance_method`. They work on GitHub, and each built version links to its own API.
 - API docs link to the guide with YARD's `{file:guide/configuration.md Configuration}`.
+- Mark incorrect usage in examples with a `# 💥` comment that says what goes wrong, next to the correct form. Prefer such a small code block over describing the wrong form in prose.
 - Link to pages, not to headings: GitHub and YARD name heading anchors differently. And don't use `\|` in tables, YARD's Markdown doesn't support it.
 
 `bundle exec rake docs:check` builds the docs of the working tree and fails on any link to a missing page or anchor. It's part of the default task, so CI runs it too.

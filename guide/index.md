@@ -12,32 +12,31 @@ TapeDeck records what an action changes in your databases, and checks later runs
 6. [When a tape fails](when-a-tape-fails.md): read a failure, decide what to do, and look up every error message
 7. [Glossary](glossary.md): the words this guide uses
 
-## Reading the examples
+## Watch out for
 
-The examples are Ruby, but you only need a few pieces of it:
+The examples assume you know RSpec. A few things trip up even people who do, because of how Ruby blocks and RSpec work:
 
-| You see | It means |
-| --- | --- |
-| `"shop"` | a text (string) |
-| `["shop", "billing"]` | a list of texts |
-| `{"shop" => SHOP_DB}` | a mapping, here from the name `"shop"` to a database connection |
-| `:once` | a fixed value (symbol), used for settings that have a few allowed values |
-| `databases: ["shop"]` | an option named `databases`, set to a list |
-| `# text` | a comment, Ruby ignores it |
+- **Settings need the `c.`.** Without it, Ruby looks for the method in the surrounding code:
 
-The configuration is written as a block:
+  ```ruby
+  TapeDeck.configure do |c|
+    exclude_columns "*.created_at"     # 💥 undefined method 'exclude_columns' for main
+    c.exclude_columns "*.created_at"   # works
+  end
+  ```
 
-```ruby
-TapeDeck.configure do |c|
-  c.databases = {"shop" => SHOP_DB}
-end
-```
+- **Database connections must exist when the configuration runs.** If `SHOP_DB` is defined after the configuration file is loaded, it fails with "uninitialized constant SHOP_DB". Load the configuration later, or set `databases` in a `before(:suite)` hook, see [Configuration](configuration.md).
+- **`tape_deck:` options can't use `let`.** RSpec reads them while it loads the spec file, before any example runs:
 
-TapeDeck hands you its configuration as `c`, and the lines between `do` and `end` set it up.
+  ```ruby
+  let(:db_name) { "shop" }
+  it "creates an order", tape_deck: {databases: [db_name]} do ... end   # 💥 RSpec fails with a WrongScopeError
+  it "creates an order", tape_deck: {databases: ["shop"]} do ... end    # works
+  ```
 
-Names like `SHOP_DB` stand for your own database connections. They're `Sequel::Database` objects, which your test suite most likely creates already.
+Lines marked with 💥 show what not to do, here and in the other chapters.
 
-The [API documentation](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck.html) lists every method and option for Ruby developers. This guide covers the same ground with more explanation.
+The [API documentation](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck.html) lists every method and option. This guide covers the same ground with more explanation.
 
 ---
 

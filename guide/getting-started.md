@@ -13,7 +13,7 @@ This chapter sets TapeDeck up in an RSpec test suite, records a first tape, and 
 Add TapeDeck to the `Gemfile` of your test suite:
 
 ```ruby
-gem "tape_deck", "~> 0.1.0", group: :test
+gem "tape_deck", group: :test
 ```
 
 Then run:
