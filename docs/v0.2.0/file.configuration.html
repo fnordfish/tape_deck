@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  File: Configuration
+  
+    &mdash; TapeDeck v0.2.0
+  
+</title>
+
+  <link rel="stylesheet" href="css/style.css" type="text/css">
+
+  <link rel="stylesheet" href="css/common.css" type="text/css">
+
+<script type="text/javascript">
+  pathId = "configuration";
+  relpath = '';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div id="main_progress" aria-hidden="true"></div>
+
+    <div class="nav_wrap">
+      <iframe id="nav" src="file_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="_index.html">Index</a> &raquo; 
+    <span class="title">File: Configuration</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><div id='filecontents'><h1 id="Configuration">Configuration</h1>
+<p>TapeDeck is configured once, usually in <code>spec/support/tape_deck.rb</code>. This chapter shows a complete configuration, then explains every setting.</p>
+<h2 id="A_complete_example">A complete example</h2>
+<pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_require'>require</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>tape_deck</span><span class='tstring_end'>&quot;</span></span>
+
+<span class='const'><span class='object_link'><a href="TapeDeck.html" title="TapeDeck (module)">TapeDeck</a></span></span><span class='period'>.</span><span class='id identifier rubyid_configure'><span class='object_link'><a href="TapeDeck.html#configure-class_method" title="TapeDeck.configure (method)">configure</a></span></span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_c'>c</span><span class='op'>|</span>
+  <span class='comment'># Where tapes are stored
+</span>  <span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_tape_library_dir'>tape_library_dir</span> <span class='op'>=</span> <span class='const'>File</span><span class='period'>.</span><span class='id identifier rubyid_expand_path'>expand_path</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>../db_tapes</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='id identifier rubyid___dir__'>__dir__</span><span class='rparen'>)</span>
+
+  <span class='comment'># The databases to watch, by the names used in tapes and patterns
+</span>  <span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_databases'>databases</span> <span class='op'>=</span> <span class='lbrace'>{</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>shop</span><span class='tstring_end'>&quot;</span></span> <span class='op'>=&gt;</span> <span class='const'>SHOP_DB</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>billing</span><span class='tstring_end'>&quot;</span></span> <span class='op'>=&gt;</span> <span class='const'>BILLING_DB</span><span class='rbrace'>}</span>
+
+  <span class='comment'># In CI, a missing tape is an error instead of being recorded
+</span>  <span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_default_record_mode'>default_record_mode</span> <span class='op'>=</span> <span class='symbol'>:verify</span> <span class='kw'>if</span> <span class='const'>ENV</span><span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>CI</span><span class='tstring_end'>&quot;</span></span><span class='rbracket'>]</span>
+
+  <span class='comment'># Never record these tables and columns
+</span>  <span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_exclude_tables'>exclude_tables</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>shop.sessions</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>*.schema_migrations</span><span class='tstring_end'>&quot;</span></span>
+  <span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_exclude_columns'>exclude_columns</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>*.created_at</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>*.updated_at</span><span class='tstring_end'>&quot;</span></span>
+
+  <span class='comment'># Also record these views
+</span>  <span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_include_views'>include_views</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>shop.order_totals</span><span class='tstring_end'>&quot;</span></span>
+
+  <span class='comment'># How new rows are numbered, see &quot;New rows and ids&quot;
+</span>  <span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_number_by_content'>number_by_content</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>shop.imported_products</span><span class='tstring_end'>&quot;</span></span>
+  <span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_references_to'>references_to</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>shop.orders</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>billing.invoices.order_id</span><span class='tstring_end'>&quot;</span></span>
+
+  <span class='comment'># Lets you tag RSpec examples with :tape_deck
+</span>  <span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_configure_rspec_metadata!'>configure_rspec_metadata!</span>
+<span class='kw'>end</span>
+</code></pre>
+<p>Only <code>databases</code> is required. Everything else has a default that works for most suites.</p>
+<h2 id="All_settings_at_a_glance">All settings at a glance</h2>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>In short</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="TapeDeck/Configuration.html#tape_library_dir-instance_method"><code>tape_library_dir</code></a></td>
+<td><code>&quot;spec/db_tapes&quot;</code></td>
+<td>where tape files are stored</td>
+</tr>
+<tr>
+<td><a href="TapeDeck/Configuration.html#databases-instance_method"><code>databases</code></a></td>
+<td>none</td>
+<td>the databases to watch, by name</td>
+</tr>
+<tr>
+<td><a href="TapeDeck/Configuration.html#default_record_mode-instance_method"><code>default_record_mode</code></a></td>
+<td><code>:once</code></td>
+<td>whether a test records, verifies or both</td>
+</tr>
+<tr>
+<td><a href="TapeDeck/Configuration.html#on_schema_change-instance_method"><code>on_schema_change</code></a></td>
+<td><code>:error</code></td>
+<td>what happens when the database schema changed since recording</td>
+</tr>
+<tr>
+<td><a href="TapeDeck/Configuration.html#exclude_tables-instance_method"><code>exclude_tables</code></a></td>
+<td>none</td>
+<td>tables that are never recorded</td>
+</tr>
+<tr>
+<td><a href="TapeDeck/Configuration.html#exclude_columns-instance_method"><code>exclude_columns</code></a></td>
+<td>none</td>
+<td>columns that are never recorded</td>
+</tr>
+<tr>
+<td><a href="TapeDeck/Configuration.html#include_views-instance_method"><code>include_views</code></a></td>
+<td>none</td>
+<td>views that are recorded, views are left out otherwise</td>
+</tr>
+<tr>
+<td><a href="TapeDeck/Configuration.html#keep_new_ids-instance_method"><code>keep_new_ids</code></a></td>
+<td>none</td>
+<td>tables whose new rows keep their real ids</td>
+</tr>
+<tr>
+<td><a href="TapeDeck/Configuration.html#number_by_content-instance_method"><code>number_by_content</code></a></td>
+<td>none</td>
+<td>tables whose new rows are numbered by content instead of creation order</td>
+</tr>
+<tr>
+<td><a href="TapeDeck/Configuration.html#references_to-instance_method"><code>references_to</code></a></td>
+<td>none</td>
+<td>columns that point at rows of another table, beyond declared foreign keys</td>
+</tr>
+<tr>
+<td><a href="TapeDeck/Configuration.html#generated_keys-instance_method"><code>generated_keys</code></a></td>
+<td>none</td>
+<td>primary keys that are generated, but not auto increment, like UUIDs</td>
+</tr>
+<tr>
+<td><a href="TapeDeck/Configuration.html#configure_rspec_metadata!-instance_method"><code>configure_rspec_metadata!</code></a></td>
+<td>off</td>
+<td>lets you tag RSpec examples with <code>:tape_deck</code></td>
+</tr>
+</tbody>
+</table>
+<p>Settings like <code>exclude_columns</code> can be called several times, each call adds to the list. The API documentation of <a href="TapeDeck/Configuration.html"><code>TapeDeck::Configuration</code></a> has the details of each.</p>
+<h2 id="Patterns">Patterns</h2>
+<p>Many settings take patterns. They name tables, columns and views like this:</p>
+<ul>
+<li>a table or view: <code>&quot;&lt;database&gt;.&lt;table&gt;&quot;</code>, like <code>&quot;shop.orders&quot;</code></li>
+<li>a column: <code>&quot;&lt;database&gt;.&lt;table&gt;.&lt;column&gt;&quot;</code>, like <code>&quot;shop.orders.created_at&quot;</code></li>
+</ul>
+<p><code>&lt;database&gt;</code> is the name you gave the database in <code>databases</code>. A <code>*</code> stands for any text, including dots, and <code>{a,b}</code> for one of several choices:</p>
+<table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Matches</th>
+<th>Doesn't match</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&quot;shop.orders&quot;</code></td>
+<td>the table <code>shop.orders</code></td>
+<td><code>shop.order_items</code></td>
+</tr>
+<tr>
+<td><code>&quot;*.created_at&quot;</code></td>
+<td><code>created_at</code> in every table of every database</td>
+<td><code>shop.orders.status</code></td>
+</tr>
+<tr>
+<td><code>&quot;shop.*.created_at&quot;</code></td>
+<td><code>created_at</code> in every table of <code>shop</code></td>
+<td><code>billing.invoices.created_at</code></td>
+</tr>
+<tr>
+<td><code>&quot;shop.*&quot;</code></td>
+<td>every table and every column in <code>shop</code></td>
+<td>anything in <code>billing</code></td>
+</tr>
+<tr>
+<td><code>&quot;shop.order*&quot;</code></td>
+<td>the tables <code>shop.orders</code> and <code>shop.order_items</code>, and as a column pattern all their columns</td>
+<td><code>shop.users</code></td>
+</tr>
+<tr>
+<td><code>&quot;*.{orders,invoices}&quot;</code></td>
+<td>the tables <code>shop.orders</code> and <code>billing.invoices</code></td>
+<td><code>shop.order_items</code></td>
+</tr>
+</tbody>
+</table>
+<p>Because <code>*</code> also matches dots, a pattern can match more than you might expect. <code>&quot;shop.order*&quot;</code> used with <code>exclude_columns</code> leaves out every column of <code>orders</code> and <code>order_items</code>.</p>
+<h2 id="Where_tapes_are_stored___tape_library_dir_">Where tapes are stored: <code>tape_library_dir</code></h2>
+<p>The directory tape files are written to and read from. A tape named <code>Checkout/creates an order</code> becomes the file <code>Checkout/creates_an_order.yml</code> in it. Characters other than letters, digits, <code>-</code>, <code>_</code> and <code>/</code> become <code>_</code>.</p>
+<p>Default: <code>&quot;spec/db_tapes&quot;</code>, relative to the directory you start your tests from. To make it independent of that, set it relative to the configuration file:</p>
+<pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_tape_library_dir'>tape_library_dir</span> <span class='op'>=</span> <span class='const'>File</span><span class='period'>.</span><span class='id identifier rubyid_expand_path'>expand_path</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>../db_tapes</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='id identifier rubyid___dir__'>__dir__</span><span class='rparen'>)</span>
+</code></pre>
+<h2 id="The_databases_to_watch___databases_">The databases to watch: <code>databases</code></h2>
+<p>A mapping from a name to a database connection (a <code>Sequel::Database</code>):</p>
+<pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_databases'>databases</span> <span class='op'>=</span> <span class='lbrace'>{</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>shop</span><span class='tstring_end'>&quot;</span></span> <span class='op'>=&gt;</span> <span class='const'>SHOP_DB</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>billing</span><span class='tstring_end'>&quot;</span></span> <span class='op'>=&gt;</span> <span class='const'>BILLING_DB</span><span class='rbrace'>}</span>
+</code></pre>
+<p>The names are yours to choose. They appear in tapes and in all patterns, so pick short, stable ones. Renaming one later means re-recording the tapes that use it.</p>
+<p>If your suite only connects to its databases when it starts, set them there. TapeDeck only needs them when the first tape is used:</p>
+<pre class="code ruby"><code class="ruby"><span class='const'>RSpec</span><span class='period'>.</span><span class='id identifier rubyid_configure'>configure</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_config'>config</span><span class='op'>|</span>
+  <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_before'>before</span><span class='lparen'>(</span><span class='symbol'>:suite</span><span class='rparen'>)</span> <span class='kw'>do</span>
+    <span class='const'><span class='object_link'><a href="TapeDeck.html" title="TapeDeck (module)">TapeDeck</a></span></span><span class='period'>.</span><span class='id identifier rubyid_configuration'><span class='object_link'><a href="TapeDeck.html#configuration-class_method" title="TapeDeck.configuration (method)">configuration</a></span></span><span class='period'>.</span><span class='id identifier rubyid_databases'><span class='object_link'><a href="TapeDeck/Configuration.html#databases-instance_method" title="TapeDeck::Configuration#databases (method)">databases</a></span></span> <span class='op'>=</span> <span class='lbrace'>{</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>shop</span><span class='tstring_end'>&quot;</span></span> <span class='op'>=&gt;</span> <span class='const'>SHOP_DB</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>billing</span><span class='tstring_end'>&quot;</span></span> <span class='op'>=&gt;</span> <span class='const'>BILLING_DB</span><span class='rbrace'>}</span>
+  <span class='kw'>end</span>
+<span class='kw'>end</span>
+</code></pre>
+<p>By default, every tape watches all of these databases. A single test can watch fewer, with the <code>databases:</code> option, see <a href="file.writing-tests.html">Writing tests</a>.</p>
+<h2 id="Recording_or_verifying___default_record_mode_">Recording or verifying: <code>default_record_mode</code></h2>
+<p>Decides what a test does with its tape:</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>When the tape is missing</th>
+<th>When the tape exists</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>:once</code> (default)</td>
+<td>records it</td>
+<td>verifies against it</td>
+</tr>
+<tr>
+<td><code>:verify</code></td>
+<td>fails with <code>TapeDeck::TapeLoadingError</code></td>
+<td>verifies against it</td>
+</tr>
+<tr>
+<td><code>:overwrite</code></td>
+<td>records it</td>
+<td>records it again, replacing it</td>
+</tr>
+</tbody>
+</table>
+<pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_default_record_mode'>default_record_mode</span> <span class='op'>=</span> <span class='symbol'>:verify</span> <span class='kw'>if</span> <span class='const'>ENV</span><span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>CI</span><span class='tstring_end'>&quot;</span></span><span class='rbracket'>]</span>
+</code></pre>
+<p>A single test can choose its own mode with the <code>record:</code> option, for example <code>record: :overwrite</code> while you re-record one tape. See <a href="file.when-a-tape-fails.html">When a tape fails</a> for re-recording.</p>
+<h2 id="When_the_schema_changed___on_schema_change_">When the schema changed: <code>on_schema_change</code></h2>
+<p>A tape remembers which tables and columns your rules left out, and which views they included. If the rules now match other tables, columns or views, for example because a column was added that matches <code>&quot;*.created_at&quot;</code>, the database schema changed since the tape was recorded. This setting decides what happens then:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>:error</code> (default)</td>
+<td>the test fails with <code>TapeDeck::IncompatibleTapeError</code>, naming what was added or removed</td>
+</tr>
+<tr>
+<td><code>:warn</code></td>
+<td>a warning is printed, and the tape is verified anyway</td>
+</tr>
+<tr>
+<td><code>:ignore</code></td>
+<td>the tape is verified, nothing is printed</td>
+</tr>
+</tbody>
+</table>
+<pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_on_schema_change'>on_schema_change</span> <span class='op'>=</span> <span class='symbol'>:warn</span>
+</code></pre>
+<h2 id="Never_recorded___exclude_tables__and__exclude_columns_">Never recorded: <code>exclude_tables</code> and <code>exclude_columns</code></h2>
+<p>For data that changes on every run, or that no test cares about: timestamps, session tables, migration bookkeeping. Excluded data never ends up on a tape.</p>
+<pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_exclude_tables'>exclude_tables</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>shop.sessions</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>*.schema_migrations</span><span class='tstring_end'>&quot;</span></span>
+<span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_exclude_columns'>exclude_columns</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>*.created_at</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>*.updated_at</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>shop.users.last_seen_at</span><span class='tstring_end'>&quot;</span></span>
+</code></pre>
+<p>Primary key columns are never excluded, even if a pattern matches them, because TapeDeck needs them to tell rows apart.</p>
+<p>To leave something out of a single test only, use <code>ignore:</code> or <code>only:</code> instead, see <a href="file.what-is-compared.html">Choosing what is compared</a>.</p>
+<h2 id="Recording_views___include_views_">Recording views: <code>include_views</code></h2>
+<p>Views are left out by default: a view holds no data of its own, so the changes of the tables behind it are recorded anyway. Include a view to also notice when its definition changes, or when it shows data from tables you don't record:</p>
+<pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_include_views'>include_views</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>shop.order_totals</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>billing.*</span><span class='tstring_end'>&quot;</span></span>
+</code></pre>
+<p>Included views are read completely on every snapshot, which takes more time than reading tables. <code>exclude_columns</code> applies to their columns.</p>
+<h2 id="Numbering_new_rows___keep_new_ids____number_by_content____references_to____generated_keys_">Numbering new rows: <code>keep_new_ids</code>, <code>number_by_content</code>, <code>references_to</code>, <code>generated_keys</code></h2>
+<p>These four settings control how tapes store the ids of new rows. They have their own chapter, <a href="file.new-rows.html">New rows and ids</a>.</p>
+<pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_keep_new_ids'>keep_new_ids</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>shop.audit_log</span><span class='tstring_end'>&quot;</span></span>
+<span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_number_by_content'>number_by_content</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>shop.imported_products</span><span class='tstring_end'>&quot;</span></span>
+<span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_references_to'>references_to</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>shop.orders</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>billing.invoices.order_id</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>*.last_order_id</span><span class='tstring_end'>&quot;</span></span>
+<span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_generated_keys'>generated_keys</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>shop.tokens.id</span><span class='tstring_end'>&quot;</span></span>
+</code></pre>
+<h2 id="RSpec_tags___configure_rspec_metadata__">RSpec tags: <code>configure_rspec_metadata!</code></h2>
+<p>Lets you put a tape around an RSpec example by tagging it with <code>:tape_deck</code>, see <a href="file.writing-tests.html">Writing tests</a>. Call it once, at the end of the configuration.</p>
+<h2 id="Turning_TapeDeck_off">Turning TapeDeck off</h2>
+<p>To run your tests without TapeDeck, for example because you don't need tapes right now and want to save the time snapshots take:</p>
+<pre class="code ruby"><code class="ruby"><span class='const'><span class='object_link'><a href="TapeDeck.html" title="TapeDeck (module)">TapeDeck</a></span></span><span class='period'>.</span><span class='id identifier rubyid_turn_off!'><span class='object_link'><a href="TapeDeck.html#turn_off!-class_method" title="TapeDeck.turn_off! (method)">turn_off!</a></span></span> <span class='kw'>if</span> <span class='const'>ENV</span><span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>TAPE_DECK</span><span class='tstring_end'>&quot;</span></span><span class='rbracket'>]</span> <span class='op'>==</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>off</span><span class='tstring_end'>&quot;</span></span>
+</code></pre>
+<p>While it's off, tagged tests just run, and <code>use_tape</code> only runs its block. No database is read, and no tape is read, written or verified. <code>TapeDeck.turn_on!</code> turns it back on, and <code>TapeDeck.turned_off { ... }</code> turns it off while a block runs.</p>
+<h2 id="Changing_the_configuration_later">Changing the configuration later</h2>
+<p>Each tape stores the rules it was recorded with. That's why some changes need re-recording and others don't:</p>
+<table>
+<thead>
+<tr>
+<th>You change</th>
+<th>Existing tapes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tape_library_dir</code></td>
+<td>are looked for in the new place, move them along</td>
+</tr>
+<tr>
+<td>a name in <code>databases</code></td>
+<td>need re-recording, the old name is on them</td>
+</tr>
+<tr>
+<td><code>default_record_mode</code>, <code>on_schema_change</code></td>
+<td>are not affected</td>
+</tr>
+<tr>
+<td><code>exclude_tables</code>, <code>exclude_columns</code>: exclude more</td>
+<td>keep working, what's excluded now is just not compared anymore</td>
+</tr>
+<tr>
+<td><code>exclude_tables</code>, <code>exclude_columns</code>: exclude less</td>
+<td>fail with <code>TapeDeck::IncompatibleTapeError</code>, they lack that data. Re-record them.</td>
+</tr>
+<tr>
+<td><code>include_views</code>: include fewer</td>
+<td>keep working, the views not included anymore aren't compared</td>
+</tr>
+<tr>
+<td><code>include_views</code>: include more</td>
+<td>fail with <code>TapeDeck::IncompatibleTapeError</code>, they lack those views. Re-record them.</td>
+</tr>
+<tr>
+<td><code>keep_new_ids</code>, <code>number_by_content</code>, <code>references_to</code>, <code>generated_keys</code></td>
+<td>are not affected: a tape is always verified with the numbering rules it was recorded with. New rules apply to tapes recorded afterwards.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p>Previous: <a href="file.getting-started.html">Getting started</a> | Next: <a href="file.writing-tests.html">Writing tests</a> | <a href="file.index.html">All chapters</a></p></div></div>
+
+      <div id="footer">
+  Generated on Fri Nov 13 14:24:44 2026 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.45 (ruby-4.0.9).
+</div>
+
+    </div>
+  </body>
+</html>

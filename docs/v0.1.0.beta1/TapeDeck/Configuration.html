@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  Class: TapeDeck::Configuration
+  
+    &mdash; TapeDeck v0.1.0.beta1
+  
+</title>
+
+  <link rel="stylesheet" href="../css/style.css" type="text/css">
+
+  <link rel="stylesheet" href="../css/common.css" type="text/css">
+
+<script type="text/javascript">
+  pathId = "TapeDeck::Configuration";
+  relpath = '../';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div id="main_progress" aria-hidden="true"></div>
+
+    <div class="nav_wrap">
+      <iframe id="nav" src="../class_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="../_index.html">Index (C)</a> &raquo;
+    <span class='title'><span class='object_link'><a href="../TapeDeck.html" title="TapeDeck (module)">TapeDeck</a></span></span>
+     &raquo; 
+    <span class="title">Configuration</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="../class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><h1>Class: TapeDeck::Configuration
+  
+  
+  
+</h1>
+<div class="box_info">
+  
+  <dl>
+    <dt>Inherits:</dt>
+    <dd>
+      <span class="inheritName">Object</span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next">TapeDeck::Configuration</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+    </dd>
+  </dl>
+  
+
+  
+  
+  
+  
+  
+
+  
+
+  
+  <dl>
+    <dt>Defined in:</dt>
+    <dd>lib/tape_deck/configuration.rb
+</dd>
+  </dl>
+  
+</div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>Global settings, set through <span class='object_link'><a href="../TapeDeck.html#configure-class_method" title="TapeDeck.configure (method)">configure</a></span>.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div>
+  
+    <h2>
+      Constant Summary
+      <small><a href="#" class="constants_summary_toggle">collapse</a></small>
+    </h2>
+
+    <dl class="constants">
+      
+        <dt id="SCHEMA_CHANGE_ACTIONS-constant" class="">SCHEMA_CHANGE_ACTIONS =
+          <div class="docstring">
+  <div class="discussion">
+    <p>Supported values for <span class='object_link'><a href="#on_schema_change-instance_method" title="TapeDeck::Configuration#on_schema_change (method)">#on_schema_change</a></span>:
+[+:error+]  raise <span class='object_link'><a href="IncompatibleTapeError.html" title="TapeDeck::IncompatibleTapeError (class)">IncompatibleTapeError</a></span>
+[+:warn+]   print a warning and verify anyway
+[+:ignore+] verify anyway</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div>
+        </dt>
+        <dd><pre class="code"><span class='qsymbols_beg'>%i[</span><span class='tstring_content'>error</span><span class='words_sep'> </span><span class='tstring_content'>warn</span><span class='words_sep'> </span><span class='tstring_content'>ignore</span><span class='tstring_end'>]</span></span><span class='period'>.</span><span class='id identifier rubyid_freeze'>freeze</span></pre></dd>
+      
+    </dl>
+  
+
+
+
+
+  <h2>Instance Attribute Summary <small><a href="#" class="summary_toggle">collapse</a></small></h2>
+  <ul class="summary">
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#databases-instance_method" title="#databases (instance method)">#<strong>databases</strong>  &#x21d2; Hash{String =&gt; Sequel::Database} </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Databases to diff, keyed by the name used in tapes and patterns.</p></div></span>
+  
+</li>
+
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#default_record_mode-instance_method" title="#default_record_mode (instance method)">#<strong>default_record_mode</strong>  &#x21d2; Symbol </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Record mode of tapes that don't set their own <code>record:</code>.</p></div></span>
+  
+</li>
+
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#excluded_columns-instance_method" title="#excluded_columns (instance method)">#<strong>excluded_columns</strong>  &#x21d2; Array&lt;String&gt; </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+      <span class="note title readonly">readonly</span>
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Patterns added with <span class='object_link'><a href="#exclude_columns-instance_method" title="TapeDeck::Configuration#exclude_columns (method)">#exclude_columns</a></span>.</p></div></span>
+  
+</li>
+
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#excluded_tables-instance_method" title="#excluded_tables (instance method)">#<strong>excluded_tables</strong>  &#x21d2; Array&lt;String&gt; </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+      <span class="note title readonly">readonly</span>
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Patterns added with <span class='object_link'><a href="#exclude_tables-instance_method" title="TapeDeck::Configuration#exclude_tables (method)">#exclude_tables</a></span>.</p></div></span>
+  
+</li>
+
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#on_schema_change-instance_method" title="#on_schema_change (instance method)">#<strong>on_schema_change</strong>  &#x21d2; Symbol </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>What to do when verifying finds that the schema changed since recording: the recorded exclude rules leave out other tables or columns than they did then.</p></div></span>
+  
+</li>
+
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#tape_library_dir-instance_method" title="#tape_library_dir (instance method)">#<strong>tape_library_dir</strong>  &#x21d2; String </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Directory tapes are read from and written to (default <code>&quot;spec/db_tapes&quot;</code>).</p></div></span>
+  
+</li>
+
+    
+  </ul>
+
+
+
+
+  
+    <h2>
+      Class Method Summary
+      <small><a href="#" class="summary_toggle">collapse</a></small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#rspec_tape_name-class_method" title="rspec_tape_name (class method)">.<strong>rspec_tape_name</strong>(example)  &#x21d2; String </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  <span class="private note title">private</span>
+
+  
+    <span class="summary_desc"><div class='inline'><p>The example's description hierarchy, e.g.</p></div></span>
+  
+</li>
+
+      
+    </ul>
+    
+  
+    <h2>
+      Instance Method Summary
+      <small><a href="#" class="summary_toggle">collapse</a></small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#configure_rspec_metadata!-instance_method" title="#configure_rspec_metadata! (instance method)">#<strong>configure_rspec_metadata!</strong>  &#x21d2; void </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Wraps RSpec examples tagged <code>:tape_deck</code> in a tape.</p></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#exclude_columns-instance_method" title="#exclude_columns (instance method)">#<strong>exclude_columns</strong>(*patterns)  &#x21d2; void </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Drops matching columns from every row before diffing, so they are never recorded.</p></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#exclude_tables-instance_method" title="#exclude_tables (instance method)">#<strong>exclude_tables</strong>(*patterns)  &#x21d2; void </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Leaves matching tables out of snapshots entirely, so they are never recorded.</p></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#initialize-instance_method" title="#initialize (instance method)">#<strong>initialize</strong>  &#x21d2; Configuration </a>
+    
+
+    
+  </span>
+  
+  
+    <span class="note title constructor">constructor</span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>A new instance of Configuration.</p></div></span>
+  
+</li>
+
+      
+    </ul>
+    
+  
+
+<div id="constructor_details" class="method_details_list">
+  <h2>Constructor Details</h2>
+  
+    <div class="method_details first">
+  <h3 class="signature first" id="initialize-instance_method">
+  
+    #<strong>initialize</strong>  &#x21d2; <tt><span class='object_link'><a href="" title="TapeDeck::Configuration (class)">Configuration</a></span></tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Returns a new instance of Configuration.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+36
+37
+38
+39
+40
+41
+42
+43</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/tape_deck/configuration.rb', line 36</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_initialize'>initialize</span>
+  <span class='ivar'>@tape_library_dir</span> <span class='op'>=</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>spec/db_tapes</span><span class='tstring_end'>&quot;</span></span>
+  <span class='ivar'>@databases</span> <span class='op'>=</span> <span class='lbrace'>{</span><span class='rbrace'>}</span>
+  <span class='ivar'>@default_record_mode</span> <span class='op'>=</span> <span class='symbol'>:once</span>
+  <span class='ivar'>@on_schema_change</span> <span class='op'>=</span> <span class='symbol'>:error</span>
+  <span class='ivar'>@excluded_tables</span> <span class='op'>=</span> <span class='lbracket'>[</span><span class='rbracket'>]</span>
+  <span class='ivar'>@excluded_columns</span> <span class='op'>=</span> <span class='lbracket'>[</span><span class='rbracket'>]</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+  
+</div>
+
+  <div id="instance_attr_details" class="attr_details">
+    <h2>Instance Attribute Details</h2>
+    
+      
+      <span id="databases=-instance_method"></span>
+      <div class="method_details first">
+  <h3 class="signature first" id="databases-instance_method">
+  
+    #<strong>databases</strong>  &#x21d2; <tt>Hash{String =&gt; Sequel::Database}</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Returns databases to diff, keyed by the name used in tapes and patterns.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Hash{String =&gt; Sequel::Database}</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>databases to diff, keyed by the name used in tapes and patterns</p></div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+16
+17
+18</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/tape_deck/configuration.rb', line 16</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_databases'>databases</span>
+  <span class='ivar'>@databases</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      
+      <span id="default_record_mode=-instance_method"></span>
+      <div class="method_details ">
+  <h3 class="signature " id="default_record_mode-instance_method">
+  
+    #<strong>default_record_mode</strong>  &#x21d2; <tt>Symbol</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Record mode of tapes that don't set their own <code>record:</code>. One of <span class='object_link'><a href="Tape.html#RECORD_MODES-constant" title="TapeDeck::Tape::RECORD_MODES (constant)">Tape::RECORD_MODES</a></span> (default <code>:once</code>). Set it
+to <code>:verify</code> in CI, so a missing tape fails the run.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Symbol</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+22
+23
+24</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/tape_deck/configuration.rb', line 22</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_default_record_mode'>default_record_mode</span>
+  <span class='ivar'>@default_record_mode</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      
+      <span id=""></span>
+      <div class="method_details ">
+  <h3 class="signature " id="excluded_columns-instance_method">
+  
+    #<strong>excluded_columns</strong>  &#x21d2; <tt>Array&lt;String&gt;</tt>  <span class="extras">(readonly)</span>
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Returns patterns added with <span class='object_link'><a href="#exclude_columns-instance_method" title="TapeDeck::Configuration#exclude_columns (method)">#exclude_columns</a></span>.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Array&lt;String&gt;</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>patterns added with <span class='object_link'><a href="#exclude_columns-instance_method" title="TapeDeck::Configuration#exclude_columns (method)">#exclude_columns</a></span></p></div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+34
+35
+36</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/tape_deck/configuration.rb', line 34</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_excluded_columns'>excluded_columns</span>
+  <span class='ivar'>@excluded_columns</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      
+      <span id=""></span>
+      <div class="method_details ">
+  <h3 class="signature " id="excluded_tables-instance_method">
+  
+    #<strong>excluded_tables</strong>  &#x21d2; <tt>Array&lt;String&gt;</tt>  <span class="extras">(readonly)</span>
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Returns patterns added with <span class='object_link'><a href="#exclude_tables-instance_method" title="TapeDeck::Configuration#exclude_tables (method)">#exclude_tables</a></span>.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Array&lt;String&gt;</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>patterns added with <span class='object_link'><a href="#exclude_tables-instance_method" title="TapeDeck::Configuration#exclude_tables (method)">#exclude_tables</a></span></p></div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+31
+32
+33</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/tape_deck/configuration.rb', line 31</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_excluded_tables'>excluded_tables</span>
+  <span class='ivar'>@excluded_tables</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      
+      <span id="on_schema_change=-instance_method"></span>
+      <div class="method_details ">
+  <h3 class="signature " id="on_schema_change-instance_method">
+  
+    #<strong>on_schema_change</strong>  &#x21d2; <tt>Symbol</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>What to do when verifying finds that the schema changed since recording: the recorded exclude rules leave out
+other tables or columns than they did then. One of <span class='object_link'><a href="#SCHEMA_CHANGE_ACTIONS-constant" title="TapeDeck::Configuration::SCHEMA_CHANGE_ACTIONS (constant)">SCHEMA_CHANGE_ACTIONS</a></span> (default <code>:error</code>).</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Symbol</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+28
+29
+30</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/tape_deck/configuration.rb', line 28</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_on_schema_change'>on_schema_change</span>
+  <span class='ivar'>@on_schema_change</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      
+      <span id="tape_library_dir=-instance_method"></span>
+      <div class="method_details ">
+  <h3 class="signature " id="tape_library_dir-instance_method">
+  
+    #<strong>tape_library_dir</strong>  &#x21d2; <tt>String</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Returns directory tapes are read from and written to (default <code>&quot;spec/db_tapes&quot;</code>).</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>String</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>directory tapes are read from and written to (default <code>&quot;spec/db_tapes&quot;</code>)</p></div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+13
+14
+15</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/tape_deck/configuration.rb', line 13</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_tape_library_dir'>tape_library_dir</span>
+  <span class='ivar'>@tape_library_dir</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+
+  <div id="class_method_details" class="method_details_list">
+    <h2>Class Method Details</h2>
+
+    
+      <div class="method_details first">
+  <h3 class="signature first" id="rspec_tape_name-class_method">
+  
+    .<strong>rspec_tape_name</strong>(example)  &#x21d2; <tt>String</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p class="note private">
+  <strong>This method is part of a private API.</strong>
+  You should avoid using this method if possible, as it may be removed or be changed in the future.
+</p>
+<p>Returns the example's description hierarchy, e.g. <code>&quot;Checkout/creates an order&quot;</code>.</p>
+
+  </div>
+</div>
+<div class="tags">
+  <p class="tag_title">Parameters:</p>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>example</span>
+      
+      
+        <span class='type'>(<tt>RSpec::Core::Example</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>String</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>the example's description hierarchy, e.g. <code>&quot;Checkout/creates an order&quot;</code></p></div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+108
+109
+110
+111</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/tape_deck/configuration.rb', line 108</span>
+
+<span class='kw'>def</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_rspec_tape_name'>rspec_tape_name</span><span class='lparen'>(</span><span class='id identifier rubyid_example'>example</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_group_descriptions'>group_descriptions</span> <span class='op'>=</span> <span class='id identifier rubyid_example'>example</span><span class='period'>.</span><span class='id identifier rubyid_example_group'>example_group</span><span class='period'>.</span><span class='id identifier rubyid_parent_groups'>parent_groups</span><span class='period'>.</span><span class='id identifier rubyid_reverse'>reverse</span><span class='period'>.</span><span class='id identifier rubyid_map'>map</span><span class='lparen'>(</span><span class='op'>&amp;</span><span class='symbol'>:description</span><span class='rparen'>)</span>
+  <span class='lbracket'>[</span><span class='op'>*</span><span class='id identifier rubyid_group_descriptions'>group_descriptions</span><span class='comma'>,</span> <span class='id identifier rubyid_example'>example</span><span class='period'>.</span><span class='id identifier rubyid_description'>description</span><span class='rbracket'>]</span><span class='period'>.</span><span class='id identifier rubyid_join'>join</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>/</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+  <div id="instance_method_details" class="method_details_list">
+    <h2>Instance Method Details</h2>
+
+    
+      <div class="method_details first">
+  <h3 class="signature first" id="configure_rspec_metadata!-instance_method">
+  
+    #<strong>configure_rspec_metadata!</strong>  &#x21d2; <tt>void</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p class="note returns_void">This method returns an undefined value.</p><p>Wraps RSpec examples tagged <code>:tape_deck</code> in a tape. The tape is named after the example's description hierarchy
+unless <code>tape_name:</code> is given. When the example fails, the tape is neither recorded nor verified.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+  <div class="examples">
+    <h4 class="tag_title">Examples:</h4>
+    
+      
+      <pre class="example code"><code>it &quot;creates an order&quot;, :tape_deck do ... end
+it &quot;creates an order&quot;, tape_deck: { record: :overwrite, tape_name: &quot;orders/create&quot; } do ... end
+it &quot;creates an order&quot;, tape_deck: { databases: %w[shop] } do ... end</code></pre>
+    
+  </div>
+
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/tape_deck/configuration.rb', line 91</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_configure_rspec_metadata!'>configure_rspec_metadata!</span>
+  <span class='op'>::</span><span class='const'>RSpec</span><span class='period'>.</span><span class='id identifier rubyid_configure'>configure</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_config'>config</span><span class='op'>|</span>
+    <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_around'>around</span><span class='lparen'>(</span><span class='symbol'>:each</span><span class='comma'>,</span> <span class='symbol'>:tape_deck</span><span class='rparen'>)</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_example'>example</span><span class='op'>|</span>
+      <span class='id identifier rubyid_options'>options</span> <span class='op'>=</span> <span class='const'>Hash</span><span class='period'>.</span><span class='id identifier rubyid_try_convert'>try_convert</span><span class='lparen'>(</span><span class='id identifier rubyid_example'>example</span><span class='period'>.</span><span class='id identifier rubyid_metadata'>metadata</span><span class='lbracket'>[</span><span class='symbol'>:tape_deck</span><span class='rbracket'>]</span><span class='rparen'>)</span> <span class='op'>||</span> <span class='lbrace'>{</span><span class='rbrace'>}</span> <span class='comment'># a bare :tape_deck tag is `true`
+</span>      <span class='id identifier rubyid_name'>name</span> <span class='op'>=</span> <span class='id identifier rubyid_options'>options</span><span class='lbracket'>[</span><span class='symbol'>:tape_name</span><span class='rbracket'>]</span> <span class='op'>||</span> <span class='const'><span class='object_link'><a href="" title="TapeDeck::Configuration (class)">Configuration</a></span></span><span class='period'>.</span><span class='id identifier rubyid_rspec_tape_name'><span class='object_link'><a href="#rspec_tape_name-class_method" title="TapeDeck::Configuration.rspec_tape_name (method)">rspec_tape_name</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_example'>example</span><span class='rparen'>)</span>
+
+      <span class='const'><span class='object_link'><a href="../TapeDeck.html" title="TapeDeck (module)">TapeDeck</a></span></span><span class='period'>.</span><span class='id identifier rubyid_insert_tape'><span class='object_link'><a href="../TapeDeck.html#insert_tape-class_method" title="TapeDeck.insert_tape (method)">insert_tape</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_name'>name</span><span class='comma'>,</span> <span class='op'>**</span><span class='id identifier rubyid_options'>options</span><span class='period'>.</span><span class='id identifier rubyid_except'>except</span><span class='lparen'>(</span><span class='symbol'>:tape_name</span><span class='rparen'>)</span><span class='rparen'>)</span>
+      <span class='id identifier rubyid_example'>example</span><span class='period'>.</span><span class='id identifier rubyid_run'>run</span>
+      <span class='id identifier rubyid_example_failed'>example_failed</span> <span class='op'>=</span> <span class='op'>!</span><span class='id identifier rubyid_example'>example</span><span class='period'>.</span><span class='id identifier rubyid_exception'>exception</span><span class='period'>.</span><span class='id identifier rubyid_nil?'>nil?</span>
+      <span class='const'><span class='object_link'><a href="../TapeDeck.html" title="TapeDeck (module)">TapeDeck</a></span></span><span class='period'>.</span><span class='id identifier rubyid_eject_tape'><span class='object_link'><a href="../TapeDeck.html#eject_tape-class_method" title="TapeDeck.eject_tape (method)">eject_tape</a></span></span><span class='lparen'>(</span><span class='label'>discard:</span> <span class='id identifier rubyid_example_failed'>example_failed</span><span class='rparen'>)</span>
+    <span class='kw'>end</span>
+  <span class='kw'>end</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="exclude_columns-instance_method">
+  
+    #<strong>exclude_columns</strong>(*patterns)  &#x21d2; <tt>void</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p class="note returns_void">This method returns an undefined value.</p><p>Drops matching columns from every row before diffing, so they are never recorded. Primary key columns are never
+dropped, because rows are matched by them.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+  <div class="examples">
+    <h4 class="tag_title">Examples:</h4>
+    
+      
+      <pre class="example code"><code><span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_exclude_columns'>exclude_columns</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>*.created_at</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>*.updated_at</span><span class='tstring_end'>&quot;</span></span></code></pre>
+    
+  </div>
+<p class="tag_title">Parameters:</p>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>patterns</span>
+      
+      
+        <span class='type'>(<tt>Array&lt;String&gt;</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>globs on <code>&quot;&lt;database&gt;.&lt;table&gt;.&lt;column&gt;&quot;</code></p></div>
+      
+    </li>
+  
+</ul>
+
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+79
+80
+81</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/tape_deck/configuration.rb', line 79</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_exclude_columns'>exclude_columns</span><span class='lparen'>(</span><span class='op'>*</span><span class='id identifier rubyid_patterns'>patterns</span><span class='rparen'>)</span>
+  <span class='ivar'>@excluded_columns</span><span class='period'>.</span><span class='id identifier rubyid_concat'>concat</span><span class='lparen'>(</span><span class='id identifier rubyid_patterns'>patterns</span><span class='period'>.</span><span class='id identifier rubyid_map'>map</span><span class='lparen'>(</span><span class='op'>&amp;</span><span class='symbol'>:to_s</span><span class='rparen'>)</span><span class='rparen'>)</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="exclude_tables-instance_method">
+  
+    #<strong>exclude_tables</strong>(*patterns)  &#x21d2; <tt>void</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p class="note returns_void">This method returns an undefined value.</p><p>Leaves matching tables out of snapshots entirely, so they are never recorded.</p>
+
+  </div>
+</div>
+<div class="tags">
+  
+  <div class="examples">
+    <h4 class="tag_title">Examples:</h4>
+    
+      
+      <pre class="example code"><code><span class='id identifier rubyid_c'>c</span><span class='period'>.</span><span class='id identifier rubyid_exclude_tables'>exclude_tables</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>shop.sessions</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>*.schema_migrations</span><span class='tstring_end'>&quot;</span></span></code></pre>
+    
+  </div>
+<p class="tag_title">Parameters:</p>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>patterns</span>
+      
+      
+        <span class='type'>(<tt>Array&lt;String&gt;</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>globs on <code>&quot;&lt;database&gt;.&lt;table&gt;&quot;</code></p></div>
+      
+    </li>
+  
+</ul>
+
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+68
+69
+70</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/tape_deck/configuration.rb', line 68</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_exclude_tables'>exclude_tables</span><span class='lparen'>(</span><span class='op'>*</span><span class='id identifier rubyid_patterns'>patterns</span><span class='rparen'>)</span>
+  <span class='ivar'>@excluded_tables</span><span class='period'>.</span><span class='id identifier rubyid_concat'>concat</span><span class='lparen'>(</span><span class='id identifier rubyid_patterns'>patterns</span><span class='period'>.</span><span class='id identifier rubyid_map'>map</span><span class='lparen'>(</span><span class='op'>&amp;</span><span class='symbol'>:to_s</span><span class='rparen'>)</span><span class='rparen'>)</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+
+      <div id="footer">
+  Generated on Fri Nov 13 14:24:47 2026 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.45 (ruby-4.0.9).
+</div>
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  File: Writing tests
+  
+    &mdash; TapeDeck main
+  
+</title>
+
+  <link rel="stylesheet" href="css/style.css" type="text/css">
+
+  <link rel="stylesheet" href="css/common.css" type="text/css">
+
+<script type="text/javascript">
+  pathId = "writing-tests";
+  relpath = '';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div id="main_progress" aria-hidden="true"></div>
+
+    <div class="nav_wrap">
+      <iframe id="nav" src="file_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="_index.html">Index</a> &raquo; 
+    <span class="title">File: Writing tests</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><div id='filecontents'><h1 id="Writing_tests">Writing tests</h1>
+<p>A tape goes around an action: TapeDeck takes a snapshot of the databases before it, another one after it, and compares the difference with the tape. This chapter shows the ways to put a tape around an action, with RSpec tags and without.</p>
+<h2 id="Tagging_RSpec_examples">Tagging RSpec examples</h2>
+<p>After <code>c.configure_rspec_metadata!</code> (see <a href="file.configuration.html">Configuration</a>), add <code>:tape_deck</code> to an example:</p>
+<pre class="code ruby"><code class="ruby"><span class='const'>RSpec</span><span class='period'>.</span><span class='id identifier rubyid_describe'>describe</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>Checkout</span><span class='tstring_end'>&quot;</span></span> <span class='kw'>do</span>
+  <span class='id identifier rubyid_it'>it</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>creates an order</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='symbol'>:tape_deck</span> <span class='kw'>do</span>
+    <span class='id identifier rubyid_client'>client</span><span class='period'>.</span><span class='id identifier rubyid_post'>post</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>/checkout</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='label'>product:</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>book</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+  <span class='kw'>end</span>
+<span class='kw'>end</span>
+</code></pre>
+<p>Options go in a <code>tape_deck:</code> mapping instead:</p>
+<pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_it'>it</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>creates an order</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='label'>tape_deck:</span> <span class='lbrace'>{</span><span class='label'>databases:</span> <span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>shop</span><span class='tstring_end'>&quot;</span></span><span class='rbracket'>]</span><span class='comma'>,</span> <span class='label'>only:</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>shop.orders</span><span class='tstring_end'>&quot;</span></span><span class='rbrace'>}</span> <span class='kw'>do</span>
+  <span class='id identifier rubyid_client'>client</span><span class='period'>.</span><span class='id identifier rubyid_post'>post</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>/checkout</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='label'>product:</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>book</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+<span class='kw'>end</span>
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>record:</code></td>
+<td>the record mode for this tape: <code>:once</code>, <code>:verify</code> or <code>:overwrite</code>, see <a href="file.configuration.html">Configuration</a></td>
+</tr>
+<tr>
+<td><code>databases:</code></td>
+<td>watch only these databases, like <code>[&quot;shop&quot;]</code>. By default, all configured databases.</td>
+</tr>
+<tr>
+<td><code>only:</code></td>
+<td>compare only what these patterns match, see <a href="file.what-is-compared.html">Choosing what is compared</a></td>
+</tr>
+<tr>
+<td><code>ignore:</code></td>
+<td>don't compare what these patterns match</td>
+</tr>
+<tr>
+<td><code>tape_name:</code></td>
+<td>name the tape differently, see &quot;Tape names&quot; below</td>
+</tr>
+</tbody>
+</table>
+<h2 id="What_a_tag_records">What a tag records</h2>
+<p>It depends on where the tag is:</p>
+<table>
+<thead>
+<tr>
+<th>Tag on</th>
+<th>Records</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>an example (<code>it</code>)</td>
+<td>One tape around the whole example: its <code>before(:each)</code> hooks and <code>let!</code>, the example itself, and its <code>after(:each)</code> hooks. <code>before(:all)</code> runs before the tape starts.</td>
+</tr>
+<tr>
+<td>a group (<code>describe</code> or <code>context</code>)</td>
+<td>One tape per example inside the group, each as if the example were tagged itself. A group never shares one tape between its examples.</td>
+</tr>
+<tr>
+<td>no tag, <code>TapeDeck.use_tape(&quot;name&quot;) { ... }</code> inside an example</td>
+<td>Only what happens inside the block. If the example is tagged too, its tape contains the block's changes as well.</td>
+</tr>
+</tbody>
+</table>
+<p>A failing example neither records nor verifies its tape, so a broken test can't overwrite a good tape.</p>
+<p>To leave one example in a tagged group without a tape, set <code>tape_deck: false</code>:</p>
+<pre class="code ruby"><code class="ruby">RSpec.describe &quot;Checkout&quot;, :tape_deck do
+  it &quot;creates an order&quot; do ... end                    # gets a tape
+  it &quot;shows the cart&quot;, tape_deck: false do ... end    # doesn&#39;t
+end
+</code></pre>
+<h2 id="Tape_names">Tape names</h2>
+<p>A tape is named after the descriptions of the example and its groups, joined with <code>/</code>. <code>tape_name:</code> renames the level it's set on. A name starting with <code>/</code> replaces the whole name up to that level:</p>
+<pre class="code ruby"><code class="ruby">describe &quot;A&quot; do                                                 # A
+  context &quot;b&quot;, tape_deck: {tape_name: &quot;FOO&quot;} do                 # A/FOO
+    context &quot;c&quot; do                                              # A/FOO/c
+      it &quot;bar&quot;, :tape_deck do ... end                           # A/FOO/c/bar.yml
+      it &quot;baz&quot;, tape_deck: {tape_name: &quot;qux&quot;} do ... end        # A/FOO/c/qux.yml
+      it &quot;all&quot;, tape_deck: {tape_name: &quot;/orders/all&quot;} do ... end # orders/all.yml
+    end
+  end
+end
+</code></pre>
+<p>Every example needs its own tape. Before the first example runs, TapeDeck stops the test run if two tagged examples would share one. That easily happens in a loop:</p>
+<pre class="code ruby"><code class="ruby">[&quot;paid&quot;, &quot;shipped&quot;].each do |status|
+  it &quot;creates an order&quot;, :tape_deck do ... end               # 💥 both are &quot;Checkout/creates an order&quot;
+  it &quot;creates an order (#{status})&quot;, :tape_deck do ... end   # each gets its own tape
+end
+</code></pre>
+<p>Lines marked with 💥 show what not to do, in this guide.</p>
+<h2 id="Options_on_groups">Options on groups</h2>
+<p>Options set on a group apply to all examples in it. When a group inside it, or an example, sets the same option again, the inner one wins. Options it doesn't set are kept:</p>
+<pre class="code ruby"><code class="ruby">describe &quot;Checkout&quot;, tape_deck: {databases: [&quot;shop&quot;], only: &quot;shop.orders&quot;} do
+  context &quot;paying&quot;, tape_deck: {ignore: &quot;shop.orders.note&quot;} do
+    it &quot;by card&quot;, tape_deck: {only: &quot;shop.payments&quot;, record: :overwrite} do ... end
+    it &quot;by invoice&quot; do ... end
+  end
+end
+</code></pre>
+<p>The examples end up with these options:</p>
+<table>
+<thead>
+<tr>
+<th>Example</th>
+<th><code>databases</code></th>
+<th><code>only</code></th>
+<th><code>ignore</code></th>
+<th><code>record</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>by card</td>
+<td><code>[&quot;shop&quot;]</code></td>
+<td><code>&quot;shop.payments&quot;</code></td>
+<td><code>&quot;shop.orders.note&quot;</code></td>
+<td><code>:overwrite</code></td>
+</tr>
+<tr>
+<td>by invoice</td>
+<td><code>[&quot;shop&quot;]</code></td>
+<td><code>&quot;shop.orders&quot;</code></td>
+<td><code>&quot;shop.orders.note&quot;</code></td>
+<td>the configured default</td>
+</tr>
+</tbody>
+</table>
+<p>An option that is a list is replaced as a whole, not extended. If a group ignores <code>&quot;shop.a&quot;</code> and an example should ignore <code>&quot;shop.b&quot;</code> too, the example lists both: <code>ignore: [&quot;shop.a&quot;, &quot;shop.b&quot;]</code>.</p>
+<p><code>tape_name:</code> is the one option that isn't passed on, it only renames its own level.</p>
+<h2 id="Cleaning_up_after_tests">Cleaning up after tests</h2>
+<p>A tag records the whole example, including its <code>after(:each)</code> hooks. If such a hook deletes the rows the test created, that deletion is recorded too, and the tape may end up showing nothing but deleted rows. Three ways around it:</p>
+<ul>
+<li><strong>Clean up before, not after:</strong> reset the data in <code>before(:each)</code> hooks. The changes then happen before the action, and the tape starts from a known state.</li>
+<li><strong>Roll back outside the tape:</strong> if your suite wraps each test in a database transaction and rolls it back, do that in an <code>around</code> hook that is set up before <code>c.configure_rspec_metadata!</code>. The rollback then happens after TapeDeck took its last snapshot.</li>
+<li><strong>Record only the action:</strong> use <code>use_tape</code> inside the example, see below.</li>
+</ul>
+<h2 id="Tapes_without_tags___use_tape_">Tapes without tags: <code>use_tape</code></h2>
+<p><a href="TapeDeck.html#use_tape-class_method"><code>TapeDeck.use_tape</code></a> puts a tape around a block of code. It works in any test framework, and in plain scripts:</p>
+<pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_it'>it</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>creates an order</span><span class='tstring_end'>&quot;</span></span> <span class='kw'>do</span>
+  <span class='id identifier rubyid_prepare_cart'>prepare_cart</span>
+
+  <span class='const'><span class='object_link'><a href="TapeDeck.html" title="TapeDeck (module)">TapeDeck</a></span></span><span class='period'>.</span><span class='id identifier rubyid_use_tape'><span class='object_link'><a href="TapeDeck.html#use_tape-class_method" title="TapeDeck.use_tape (method)">use_tape</a></span></span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>checkout/creates_order</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span> <span class='kw'>do</span>
+    <span class='id identifier rubyid_client'>client</span><span class='period'>.</span><span class='id identifier rubyid_post'>post</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>/checkout</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='label'>product:</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>book</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+  <span class='kw'>end</span>
+
+  <span class='id identifier rubyid_expect'>expect</span><span class='lparen'>(</span><span class='id identifier rubyid_page'>page</span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_to'>to</span> <span class='id identifier rubyid_have_content'>have_content</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>Thank you</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+<span class='kw'>end</span>
+</code></pre>
+<p>Only the <code>client.post</code> is recorded, not <code>prepare_cart</code>. The options are the same as for tags, for example <code>TapeDeck.use_tape(&quot;checkout/creates_order&quot;, databases: [&quot;shop&quot;]) do ... end</code>. The name is the complete tape name.</p>
+<p>If the block raises an error, the tape is neither recorded nor verified, and the error goes on as usual. Leaving the block early with <code>return</code>, <code>break</code> or <code>next</code> is fine, the tape is recorded or verified as usual.</p>
+<p>Tapes can be nested. The outer tape then contains everything, including the changes of the inner one:</p>
+<pre class="code ruby"><code class="ruby"><span class='const'><span class='object_link'><a href="TapeDeck.html" title="TapeDeck (module)">TapeDeck</a></span></span><span class='period'>.</span><span class='id identifier rubyid_use_tape'><span class='object_link'><a href="TapeDeck.html#use_tape-class_method" title="TapeDeck.use_tape (method)">use_tape</a></span></span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>checkout</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span> <span class='kw'>do</span>                 <span class='comment'># records both requests
+</span>  <span class='id identifier rubyid_client'>client</span><span class='period'>.</span><span class='id identifier rubyid_post'>post</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>/cart</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='label'>product:</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>book</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+  <span class='const'><span class='object_link'><a href="TapeDeck.html" title="TapeDeck (module)">TapeDeck</a></span></span><span class='period'>.</span><span class='id identifier rubyid_use_tape'><span class='object_link'><a href="TapeDeck.html#use_tape-class_method" title="TapeDeck.use_tape (method)">use_tape</a></span></span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>checkout/payment</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span> <span class='kw'>do</span>       <span class='comment'># records only this one
+</span>    <span class='id identifier rubyid_client'>client</span><span class='period'>.</span><span class='id identifier rubyid_post'>post</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>/pay</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='label'>card:</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>4242</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+  <span class='kw'>end</span>
+<span class='kw'>end</span>
+</code></pre>
+<h2 id="Your_own_RSpec_hook">Your own RSpec hook</h2>
+<p>For full control over which examples get a tape, how it's named and which options it uses, write your own hook. Use <a href="TapeDeck.html#insert_tape-class_method"><code>insert_tape</code></a> and <a href="TapeDeck.html#eject_tape-class_method"><code>eject_tape</code></a> there:</p>
+<pre class="code ruby"><code class="ruby"><span class='const'>RSpec</span><span class='period'>.</span><span class='id identifier rubyid_configure'>configure</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_config'>config</span><span class='op'>|</span>
+  <span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_around'>around</span><span class='lparen'>(</span><span class='symbol'>:each</span><span class='comma'>,</span> <span class='symbol'>:checkout_tape</span><span class='rparen'>)</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_example'>example</span><span class='op'>|</span>
+    <span class='const'><span class='object_link'><a href="TapeDeck.html" title="TapeDeck (module)">TapeDeck</a></span></span><span class='period'>.</span><span class='id identifier rubyid_insert_tape'><span class='object_link'><a href="TapeDeck.html#insert_tape-class_method" title="TapeDeck.insert_tape (method)">insert_tape</a></span></span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>checkout/</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_example'>example</span><span class='period'>.</span><span class='id identifier rubyid_description'>description</span><span class='embexpr_end'>}</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='label'>databases:</span> <span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>shop</span><span class='tstring_end'>&quot;</span></span><span class='rbracket'>]</span><span class='comma'>,</span> <span class='label'>only:</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>shop.orders</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+    <span class='id identifier rubyid_example'>example</span><span class='period'>.</span><span class='id identifier rubyid_run'>run</span>
+    <span class='comment'># example.run doesn&#39;t raise an error when the example fails, so tell TapeDeck to throw the tape away
+</span>    <span class='const'><span class='object_link'><a href="TapeDeck.html" title="TapeDeck (module)">TapeDeck</a></span></span><span class='period'>.</span><span class='id identifier rubyid_eject_tape'><span class='object_link'><a href="TapeDeck.html#eject_tape-class_method" title="TapeDeck.eject_tape (method)">eject_tape</a></span></span><span class='lparen'>(</span><span class='label'>discard:</span> <span class='op'>!</span><span class='id identifier rubyid_example'>example</span><span class='period'>.</span><span class='id identifier rubyid_exception'>exception</span><span class='period'>.</span><span class='id identifier rubyid_nil?'>nil?</span><span class='rparen'>)</span>
+  <span class='kw'>end</span>
+<span class='kw'>end</span>
+</code></pre>
+<p>Examples tagged <code>:checkout_tape</code> then get a tape named after their description, in a <code>checkout</code> directory.</p>
+<p>Don't use <code>use_tape</code> in a hook:</p>
+<pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_config'>config</span><span class='period'>.</span><span class='id identifier rubyid_around'>around</span><span class='lparen'>(</span><span class='symbol'>:each</span><span class='comma'>,</span> <span class='symbol'>:checkout_tape</span><span class='rparen'>)</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_example'>example</span><span class='op'>|</span>
+  <span class='const'><span class='object_link'><a href="TapeDeck.html" title="TapeDeck (module)">TapeDeck</a></span></span><span class='period'>.</span><span class='id identifier rubyid_use_tape'><span class='object_link'><a href="TapeDeck.html#use_tape-class_method" title="TapeDeck.use_tape (method)">use_tape</a></span></span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>checkout/</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_example'>example</span><span class='period'>.</span><span class='id identifier rubyid_description'>description</span><span class='embexpr_end'>}</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span> <span class='lbrace'>{</span> <span class='id identifier rubyid_example'>example</span><span class='period'>.</span><span class='id identifier rubyid_run'>run</span> <span class='rbrace'>}</span>   <span class='comment'># 💥 records failed examples too
+</span><span class='kw'>end</span>
+</code></pre>
+<p>A failing example doesn't raise an error out of <code>example.run</code>, so <code>use_tape</code> would record or verify the failed example as if it had passed.</p>
+<p><code>insert_tape</code> and <code>eject_tape</code> work like opening and closing a file by hand: you're responsible for closing. If the action fails, eject with <code>discard: true</code>. If ejecting an inner tape raises an error, that tape is ejected anyway, but outer tapes stay inserted, eject them too.</p>
+<h2 id="Turning_TapeDeck_off">Turning TapeDeck off</h2>
+<p><a href="TapeDeck.html#turn_off!-class_method"><code>TapeDeck.turn_off!</code></a> turns every tape off: tagged examples just run, and <code>use_tape</code> only runs its block. See <a href="file.configuration.html">Configuration</a>.</p>
+<hr />
+<p>Previous: <a href="file.configuration.html">Configuration</a> | Next: <a href="file.what-is-compared.html">Choosing what is compared</a> | <a href="file.index.html">All chapters</a></p></div></div>
+
+      <div id="footer">
+  Generated on Fri Nov 13 14:24:43 2026 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.45 (ruby-4.0.9).
+</div>
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  File: Changes
+  
+    &mdash; TapeDeck v0.2.0
+  
+</title>
+
+  <link rel="stylesheet" href="css/style.css" type="text/css">
+
+  <link rel="stylesheet" href="css/common.css" type="text/css">
+
+<script type="text/javascript">
+  pathId = "CHANGELOG";
+  relpath = '';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div id="main_progress" aria-hidden="true"></div>
+
+    <div class="nav_wrap">
+      <iframe id="nav" src="file_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="_index.html">Index</a> &raquo; 
+    <span class="title">File: Changes</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><div id='filecontents'><h1 id="Changes">Changes</h1>
+<h2 id="0_2_0">0.2.0</h2>
+<ul>
+<li>Breaking: in the RSpec tag, <code>tape_name:</code> renames only the level it is set on, so an example's <code>tape_name: &quot;x&quot;</code> inside <code>describe &quot;Checkout&quot;</code> is the tape <code>Checkout/x</code>. A leading <code>/</code> gives the complete name, like <code>tape_name: &quot;/orders/create&quot;</code>. To keep the name of an existing tape, add a leading <code>/</code> to its <code>tape_name:</code>.</li>
+<li>Change: <code>tape_deck:</code> options set on example groups are merged down to their examples, key by key. Before, an example's own options replaced all of its groups' options.</li>
+<li>Add: the RSpec integration works with RSpec 4.0.0.beta1, tested in CI next to RSpec 3</li>
+<li>Add: a user guide in <code>guide/</code>, published with the API docs: getting started, every setting, writing tests, choosing what is compared, new rows and ids, every error message explained, and a glossary. The README is short now and links to it. Guide and API docs link to each other, and <code>rake docs:check</code> keeps those links working.</li>
+<li>Add: <code>TapeDeck.turn_off!</code>, <code>turn_on!</code>, <code>turned_on?</code> and <code>turned_off { }</code>, to run without TapeDeck. While it's off, <code>use_tape</code> only runs its block and tagged RSpec examples just run, without touching a database or a tape.</li>
+<li>Fix: leaving a <code>use_tape</code> block early with <code>return</code>, <code>break</code> or <code>next</code> silently discarded the tape, so it was neither recorded nor verified</li>
+<li>Fix: a tape that didn't match crashed with <code>NameError: uninitialized constant RSpec</code> outside of RSpec, like in Minitest or a script, instead of showing the diff</li>
+</ul>
+<h2 id="0_1_0">0.1.0</h2>
+<ul>
+<li>Breaking: tapes recorded with 0.1.0.beta1 need re-recording. Their information section is now called <code>tape_deck</code>, and ids of new rows are stored as placeholders.</li>
+<li>Breaking: generated ids of inserted rows are stored as placeholders like <code>new shop.orders 1</code>, numbered per table in creation order, and so are declared foreign keys to them. Tapes no longer depend on where the database's counters stand. <code>keep_new_ids</code> keeps real ids.
+<ul>
+<li><code>number_by_content</code> numbers a table's new rows by content, when creation order doesn't matter, like for an import</li>
+<li><code>references_to</code> adds references across databases and ones without a foreign key</li>
+<li><code>generated_keys</code> adds generated keys that aren't auto increment, like UUIDs</li>
+</ul>
+</li>
+<li>Add: PostgreSQL support, and SQLite as a supported database. Database specific code lives in adapters, picked by Sequel's database type. Other databases Sequel supports read every table on every snapshot.</li>
+<li>Add: opt-in views with <code>include_views</code></li>
+<li>Add: tapes store the TapeDeck version and the new-row numbering rules. Verifying uses the tape's numbering rules, not the current configuration.</li>
+<li>Add: the RSpec hook fails the suite when tagged examples would share a tape, like the same description in a loop</li>
+<li>Fix: the order of rows on a tape no longer depends on Ruby's <code>inspect</code> format, which changes between Ruby versions. Verifying also ignores the row order on the tape.</li>
+<li>Change: values of unknown types, like from Sequel's <code>pg_json</code> or <code>pg_array</code> extensions, become plain Hashes, Arrays or Strings</li>
+<li>Internal housekeeping
+<ul>
+<li>API docs on GitHub Pages, for <code>main</code> and every release</li>
+<li>CI tests Ruby 3.2 to 4.0 and head, MySQL 8.4 and MariaDB 11.4 with <code>mysql2</code>, <code>trilogy</code> and <code>ruby-mysql</code>, and PostgreSQL 15 and 18</li>
+<li>Gemfile.lock is no longer tracked</li>
+</ul>
+</li>
+</ul>
+<h2 id="0_1_0_beta1">0.1.0.beta1</h2>
+<ul>
+<li>First beta. The API and the tape format may still change.</li>
+</ul></div></div>
+
+      <div id="footer">
+  Generated on Fri Nov 13 14:24:44 2026 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.45 (ruby-4.0.9).
+</div>
+
+    </div>
+  </body>
+</html>

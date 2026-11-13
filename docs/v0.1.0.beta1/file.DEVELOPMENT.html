@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  File: DEVELOPMENT
+  
+    &mdash; TapeDeck v0.1.0.beta1
+  
+</title>
+
+  <link rel="stylesheet" href="css/style.css" type="text/css">
+
+  <link rel="stylesheet" href="css/common.css" type="text/css">
+
+<script type="text/javascript">
+  pathId = "DEVELOPMENT";
+  relpath = '';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div id="main_progress" aria-hidden="true"></div>
+
+    <div class="nav_wrap">
+      <iframe id="nav" src="file_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="_index.html">Index</a> &raquo; 
+    <span class="title">File: DEVELOPMENT</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><div id='filecontents'><h1 id="Development_Guidelines">Development Guidelines</h1>
+<ul>
+<li>Keep it simple.</li>
+<li>Keep the module boundaries clean, each piece has one job.</li>
+</ul>
+<h2 id="Design">Design</h2>
+<table>
+<thead>
+<tr>
+<th>Piece</th>
+<th>Job</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Configuration</code></td>
+<td>Plain settings: <code>tape_library_dir</code>, <code>databases</code>, <code>default_record_mode</code>, <code>on_schema_change</code>, exclude patterns, RSpec hook</td>
+</tr>
+<tr>
+<td><code>Tape</code></td>
+<td>File-like. Knows its name, path and mode (<code>recording?</code> / <code>verifying?</code>), can <code>read</code> and <code>write(diff, recorded:)</code>. Never touches a database</td>
+</tr>
+<tr>
+<td><code>Recorder</code></td>
+<td>Observes databases: <code>snapshot</code> and <code>diff</code>. Knows nothing about tapes or configuration</td>
+</tr>
+<tr>
+<td><code>Filter</code></td>
+<td>Narrows a diff to what one use of a tape wants compared (<code>only:</code> / <code>ignore:</code>). <code>@api private</code></td>
+</tr>
+<tr>
+<td><code>Session</code></td>
+<td>One run of one tape: &quot;before&quot; snapshot on creation, <code>finish</code> captures the diff and records or verifies. <code>@api private</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>TapeDeck.insert_tape</code> is the only place that wires these together. <code>TapeDeck.use_tape</code> wraps insert and eject around a block. Sessions are kept on a stack, so tapes can be nested.</p>
+<p>Decisions made on purpose. Please don't undo them without discussing first:</p>
+<ul>
+<li><strong>Exclude vs ignore.</strong> <code>exclude_tables</code> / <code>exclude_columns</code> (configuration) mean never recorded. <code>only:</code> / <code>ignore:</code> (per tape use) mean recorded but not compared, applied to both sides when verifying and not at all when recording. There is deliberately no global verify-time ignore.</li>
+<li><strong>Record modes</strong> are <code>:once</code>, <code>:verify</code>, <code>:overwrite</code>. Renamed from VCR's <code>:once</code>, <code>:none</code>, <code>:all</code>.</li>
+<li><strong>Vocabulary.</strong> &quot;record&quot;, &quot;verify&quot;, &quot;discard&quot;, &quot;capture&quot;. Not &quot;playback&quot;, not &quot;compare&quot; as a mode name.</li>
+<li><strong>Errors</strong> live directly under <code>TapeDeck</code> (<code>Error</code>, <code>TapeLoadingError</code>, <code>IncompatibleTapeError</code>, <code>UnexpectedDiffError</code>), not in an <code>Errors</code> module.</li>
+<li><strong>Manual <code>insert_tape</code> / <code>eject_tape</code> work like <code>File.open</code> without a block</strong>: no automatic tear down. The caller discards a tape whose action failed, and ejects outer tapes when an inner eject raises. <code>use_tape</code> and the RSpec tag do both.</li>
+<li><strong>Options are keywords.</strong> Unknown keywords raise.</li>
+<li>
+<strong>A tape stores what was recorded</strong>: the exclude patterns (once, they are global), the watched databases, and the resolved names (<code>&lt;table&gt;</code>, <code>&lt;table&gt;.&lt;column&gt;</code>) the patterns left out of each.
+<ul>
+<li>A tape must cover the run that verifies it: the watched databases are a subset of the recorded ones, and everything the tape left out is still excluded under the current rules. What is excluded now but on the tape is dropped from both sides before comparing.</li>
+<li>Schema changes: the recorded patterns, applied to the current schema, must resolve to the recorded names. A difference means a matching table or column was added or removed. <code>on_schema_change</code> decides between error, warning and nothing.</li>
+</ul>
+</li>
+<li><strong>Primary key columns are never excluded</strong>, even if a pattern matches, because rows are matched by them.</li>
+<li><strong>Snapshots reuse unchanged tables.</strong> <code>CHECKSUM TABLE</code> runs before and after. A table whose checksum is unchanged reuses the first snapshot object, and <code>diff</code> skips it by identity (<code>equal?</code>).</li>
+<li><strong>Tables without a primary key</strong> are compared as a multiset of rows (inserted / deleted only).</li>
+<li><strong>Binary values</strong>: valid UTF-8 becomes a plain UTF-8 string, anything else is hex up to 64 bytes and a <code>sha256:</code> digest above that. Always a plain <code>String</code>, never a subclass, so <code>YAML.safe_load</code> can read the tape.</li>
+<li><strong>TIME columns</strong> are stored as a time of day, recognized by their database type (<code>Recorder::TIME_DB_TYPE</code>), because Sequel types <code>time</code> as <code>:time</code> but not <code>time(6)</code>. <code>mysql2</code> returns them as a <code>Time</code> on 2000-01-01, which would otherwise be stored as a timestamp.</li>
+</ul>
+<h2 id="Code_style">Code style</h2>
+<ul>
+<li><a href="https://github.com/standardrb/standard">Standard</a>, run with <code>bundle exec rake standard</code></li>
+<li>YARD docs, brief, where useful. Private helpers only get a comment when the name is not enough. Keep <code>yard stats</code> at 100 percent.</li>
+<li>Comment lines up to 120 characters</li>
+<li>Prefer <code>if ... else</code> over the ternary operator unless trivial</li>
+<li>Extract dense expressions into named variables, constants or methods</li>
+</ul>
+<h2 id="Testing">Testing</h2>
+<ul>
+<li><code>bundle exec rake spec</code> runs everything: the fake specs, then the MySQL specs once per adapter if <code>TAPE_DECK_MYSQL_URL</code> is set</li>
+<li><code>bundle exec rake spec:fake</code> needs no server. In-memory SQLite through Sequel, <code>spec/support/fake_mysql.rb</code> answers <code>CHECKSUM TABLE</code>, everything else is real Sequel.</li>
+<li><code>bundle exec rake spec:mysql2</code> / <code>spec:trilogy</code> run <code>spec/integration/mysql_spec.rb</code> (tagged <code>:mysql</code>) with that adapter</li>
+</ul>
+<p><code>TAPE_DECK_MYSQL_URL</code> is a server URL without a database, e.g. <code>mysql2://root:tape_deck@mysql</code>. The adapter tasks replace its scheme with their own. The MySQL specs create and drop <code>tape_deck_shop</code> and <code>tape_deck_billing</code>.</p>
+<p>The devcontainer (<code>.devcontainer/</code>) has Ruby and MySQL 8.4, with <code>TAPE_DECK_MYSQL_URL</code> already set. Without VS Code:</p>
+<pre class="code ruby"><code class="ruby">docker compose -f .devcontainer/compose.yml run --rm app sh -c &quot;bundle install &amp;&amp; bundle exec rake spec&quot;
+</code></pre>
+<p>The server is MySQL 8.4 by default. Set <code>MYSQL_IMAGE</code> for another one, e.g. <code>MYSQL_IMAGE=mariadb:11.4</code>.</p>
+<p>CI runs the default task, plus <code>spec:mysql2</code> and <code>spec:trilogy</code> in the devcontainer setup, against MySQL 8.4 and MariaDB 11.4.</p>
+<p>The adapters live in the optional <code>mysql</code> Gemfile group (<code>BUNDLE_WITH=mysql</code>), because <code>mysql2</code> needs the MySQL client library to install.</p>
+<h2 id="Docs">Docs</h2>
+<ul>
+<li><code>bundle exec yard doc</code> builds the docs into <code>doc/</code>, <code>bundle exec yard server -r</code> serves them while you edit</li>
+<li><code>bundle exec rake docs:pages</code> builds <code>main</code> and every <code>v*</code> tag into <code>_site/docs/&lt;ref&gt;</code>, from their commits, not the working tree</li>
+</ul>
+<p>The Docs workflow runs <code>docs:pages</code> on every push to <code>main</code> and every version tag, and publishes <code>_site</code> to <a href="https://fnordfish.github.io/tape_deck/docs/">https://fnordfish.github.io/tape_deck/docs/</a> (<code>main/</code>, <code>v0.1.0/</code>, ...). It needs GitHub Pages enabled with &quot;GitHub Actions&quot; as the source (Settings, Pages).</p>
+<h2 id="Releasing">Releasing</h2>
+<p>Releases go to rubygems.org and to the <code>@fnordfish</code> namespace on <a href="https://gem.coop">gem.coop</a>.</p>
+<ol>
+<li>Bump <code>TapeDeck::VERSION</code> and add a CHANGELOG entry</li>
+<li><code>GEM_COOP_API_KEY=&lt;push key&gt; bundle exec rake release</code></li>
+</ol>
+<p><code>release</code> tags, pushes to rubygems.org, then runs <code>release:gem_coop</code>. If the gem.coop push fails, run <code>bundle exec rake release:gem_coop</code> again on its own. Push keys come from <a href="https://gem.coop/user/push_keys/new">https://gem.coop/user/push_keys/new</a>.</p>
+<h2 id="Tested_against">Tested against</h2>
+<p>MySQL 8.4 and MariaDB 11.4, each with the <code>mysql2</code> and <code>trilogy</code> adapters. CI runs all four. Other servers and versions may work, but are untested.</p>
+<h2 id="Roadmap_and_open_questions">Roadmap and open questions</h2>
+<ul>
+<li>Replace new auto increment ids with stable placeholders, so tapes don't depend on the starting state</li>
+<li>Views are not snapshotted (<code>db.tables</code> skips them)</li>
+<li>Binary data that happens to be valid UTF-8 (short hashes, UUIDs) is shown as text</li>
+<li><code>CHECKSUM TABLE</code> scans the whole table. Fine for test databases, worth measuring for large ones.</li>
+</ul></div></div>
+
+      <div id="footer">
+  Generated on Fri Nov 13 14:24:47 2026 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.45 (ruby-4.0.9).
+</div>
+
+    </div>
+  </body>
+</html>
