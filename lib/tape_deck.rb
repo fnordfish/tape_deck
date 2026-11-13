@@ -24,6 +24,8 @@ require_relative "tape_deck/recorder"
 # Records what a block of code changes in several databases, and checks later runs against that recording.
 # API, naming and flow inspired by the VCR gem.
 #
+# This is the API reference. The {file:guide/index.md guide} explains TapeDeck step by step, with examples.
+#
 # == Tapes
 #
 # A tape is one recording: the row-level diff that one action caused across all configured databases, stored as a YAML
@@ -110,6 +112,8 @@ require_relative "tape_deck/recorder"
 #
 # == New rows
 #
+# {file:guide/new-rows.md New rows and ids} in the guide has more examples.
+#
 # The ids a database hands out depend on where its counters stand, and those move with every insert, also with ones
 # that were rolled back. So a tape doesn't store the generated keys of inserted rows. It numbers them per table in the
 # order the rows were created, and stores placeholders like +"new shop.orders 1"+. Declared foreign keys to those rows
@@ -148,6 +152,8 @@ require_relative "tape_deck/recorder"
 # {IncompatibleTapeError}, unless the recorded rules match it too: then a schema change added it, see below.
 #
 # == Excluding and ignoring
+#
+# {file:guide/what-is-compared.md Choosing what is compared} in the guide helps deciding between them.
 #
 # There are two ways to leave data out, and they act at different moments.
 #

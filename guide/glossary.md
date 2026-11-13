@@ -35,3 +35,7 @@
 **Schema change**: tables, columns or views were added or removed since a tape was recorded.
 
 **Insert and eject**: start and end a tape by hand, without a block, see [Writing tests](writing-tests.md).
+
+---
+
+Previous: [When a tape fails](when-a-tape-fails.md) | [All chapters](index.md)

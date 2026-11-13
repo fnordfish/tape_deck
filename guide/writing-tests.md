@@ -112,7 +112,7 @@ A tag records the whole example, including its `after(:each)` hooks. If such a h
 
 ## Tapes without tags: `use_tape`
 
-`TapeDeck.use_tape` puts a tape around a block of code. It works in any test framework, and in plain scripts:
+[`TapeDeck.use_tape`](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck.html#use_tape-class_method) puts a tape around a block of code. It works in any test framework, and in plain scripts:
 
 ```ruby
 it "creates an order" do
@@ -143,7 +143,7 @@ end
 
 ## Your own RSpec hook
 
-For full control over which examples get a tape, how it's named and which options it uses, write your own hook. Use `insert_tape` and `eject_tape` there:
+For full control over which examples get a tape, how it's named and which options it uses, write your own hook. Use [`insert_tape`](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck.html#insert_tape-class_method) and [`eject_tape`](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck.html#eject_tape-class_method) there:
 
 ```ruby
 RSpec.configure do |config|
@@ -164,4 +164,8 @@ Don't use `TapeDeck.use_tape("...") { example.run }` in a hook: a failing exampl
 
 ## Turning TapeDeck off
 
-`TapeDeck.turn_off!` turns every tape off: tagged examples just run, and `use_tape` only runs its block. See [Configuration](configuration.md).
+[`TapeDeck.turn_off!`](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck.html#turn_off!-class_method) turns every tape off: tagged examples just run, and `use_tape` only runs its block. See [Configuration](configuration.md).
+
+---
+
+Previous: [Configuration](configuration.md) | Next: [Choosing what is compared](what-is-compared.md) | [All chapters](index.md)

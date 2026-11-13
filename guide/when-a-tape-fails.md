@@ -59,7 +59,7 @@ Check the new tape with `git diff` before committing it. It should only change w
 
 ## Every error, explained
 
-### `TapeDeck::UnexpectedDiffError`
+### [`TapeDeck::UnexpectedDiffError`](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck/UnexpectedDiffError.html)
 
 ```
 DB diff does not match tape spec/db_tapes/checkout.yml
@@ -67,7 +67,7 @@ DB diff does not match tape spec/db_tapes/checkout.yml
 
 The test changed the databases differently than the tape says. See "Reading the difference" above.
 
-### `TapeDeck::TapeLoadingError`
+### [`TapeDeck::TapeLoadingError`](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck/TapeLoadingError.html)
 
 ```
 no tape at spec/db_tapes/nothing.yml (record mode :verify)
@@ -87,7 +87,7 @@ tape spec/db_tapes/old.yml does not hold a recording
 
 The file is valid YAML, but not a tape TapeDeck can read. Most likely it was recorded by an older version of TapeDeck with a different file format, the CHANGELOG says when that happened. Record the tape again.
 
-### `TapeDeck::IncompatibleTapeError`
+### [`TapeDeck::IncompatibleTapeError`](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck/IncompatibleTapeError.html)
 
 The tape can't be used for this test as it is now. It needs recording again, or the configuration needs to go back to how it was.
 
@@ -115,7 +115,7 @@ schema changed since tape spec/db_tapes/excluded.yml was recorded, its recording
 
 The database schema changed since recording: the rules from the tape now match something they didn't before, here a new column `billing.invoices.note` that matches `"*.note"`. Check whether the change is expected, then record the tape again. If schema changes like this are normal in your project, set `c.on_schema_change = :warn` or `:ignore`, see [Configuration](configuration.md).
 
-### `TapeDeck::Error`
+### [`TapeDeck::Error`](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck/Error.html)
 
 ```
 TapeDeck: examples share a tape. Give each its own description or tape_name:
@@ -149,3 +149,7 @@ invalid schema change action :fail, use one of [:error, :warn, :ignore]
 ```
 
 A setting got a value it doesn't know. The message lists the allowed ones.
+
+---
+
+Previous: [New rows and ids](new-rows.md) | Next: [Glossary](glossary.md) | [All chapters](index.md)

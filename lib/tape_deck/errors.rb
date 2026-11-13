@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 module TapeDeck
-  # Base class for all TapeDeck errors.
+  # Base class for all TapeDeck errors. {file:guide/when-a-tape-fails.md When a tape fails} in the guide explains each
+  # error message, and how to fix it.
   class Error < StandardError; end
 
   # Raised when a tape must be verified but its file does not exist, is not valid YAML or does not hold a diff.

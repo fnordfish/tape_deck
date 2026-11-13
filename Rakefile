@@ -47,7 +47,7 @@ end
 
 require "standard/rake"
 
-task default: %i[spec standard]
+task default: %i[spec standard docs:check]
 
 GEM_COOP_HOST = "https://gem.coop/@fnordfish"
 
@@ -63,6 +63,33 @@ namespace :release do
 end
 
 namespace :docs do
+  desc "Build the YARD docs of the working tree, and check that every link between their pages and anchors works"
+  task :check do
+    require "cgi"
+    output = File.expand_path("tmp/docs-check")
+    rm_rf output
+    sh "yard", "doc", "--no-save", "--no-stats", "--quiet", "--output-dir", output
+
+    pages = Dir.glob("#{output}/**/*.html").reject { File.basename(_1).match?(/\A(class_list|method_list|file_list|frames)\.html\z/) }
+    ids = Hash.new { |cache, page| cache[page] = File.read(page).scan(/\bid="([^"]+)"/).flatten }
+    broken = pages.flat_map do |page|
+      File.read(page).scan(/href="([^"]+)"/).flatten.filter_map do |href|
+        next if href == "#" || href.match?(%r{\A[a-z]+:}) # external links are not checked
+
+        path, anchor = href.split("#", 2)
+        target = path.empty? ? page : File.expand_path(path, File.dirname(page))
+        problem = if !File.exist?(target)
+          "missing page"
+        elsif anchor && !anchor.empty? && !ids[target].include?(CGI.unescape(anchor))
+          "missing anchor"
+        end
+        "#{page.delete_prefix("#{output}/")}: #{href} (#{problem})" if problem
+      end
+    end.uniq
+    abort "Broken links in the docs:\n#{broken.join("\n")}" unless broken.empty?
+    puts "All links in the docs work"
+  end
+
   desc "Build the YARD docs of main and every version tag into _site, like GitHub Pages publishes them"
   task :pages do
     # Start from scratch, also after an interrupted run left worktrees behind

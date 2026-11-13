@@ -39,20 +39,20 @@ Only `databases` is required. Everything else has a default that works for most 
 
 | Setting | Default | In short |
 | --- | --- | --- |
-| `tape_library_dir` | `"spec/db_tapes"` | where tape files are stored |
-| `databases` | none | the databases to watch, by name |
-| `default_record_mode` | `:once` | whether a test records, verifies or both |
-| `on_schema_change` | `:error` | what happens when the database schema changed since recording |
-| `exclude_tables` | none | tables that are never recorded |
-| `exclude_columns` | none | columns that are never recorded |
-| `include_views` | none | views that are recorded, views are left out otherwise |
-| `keep_new_ids` | none | tables whose new rows keep their real ids |
-| `number_by_content` | none | tables whose new rows are numbered by content instead of creation order |
-| `references_to` | none | columns that point at rows of another table, beyond declared foreign keys |
-| `generated_keys` | none | primary keys that are generated, but not auto increment, like UUIDs |
-| `configure_rspec_metadata!` | off | lets you tag RSpec examples with `:tape_deck` |
+| [`tape_library_dir`](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck/Configuration.html#tape_library_dir-instance_method) | `"spec/db_tapes"` | where tape files are stored |
+| [`databases`](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck/Configuration.html#databases-instance_method) | none | the databases to watch, by name |
+| [`default_record_mode`](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck/Configuration.html#default_record_mode-instance_method) | `:once` | whether a test records, verifies or both |
+| [`on_schema_change`](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck/Configuration.html#on_schema_change-instance_method) | `:error` | what happens when the database schema changed since recording |
+| [`exclude_tables`](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck/Configuration.html#exclude_tables-instance_method) | none | tables that are never recorded |
+| [`exclude_columns`](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck/Configuration.html#exclude_columns-instance_method) | none | columns that are never recorded |
+| [`include_views`](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck/Configuration.html#include_views-instance_method) | none | views that are recorded, views are left out otherwise |
+| [`keep_new_ids`](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck/Configuration.html#keep_new_ids-instance_method) | none | tables whose new rows keep their real ids |
+| [`number_by_content`](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck/Configuration.html#number_by_content-instance_method) | none | tables whose new rows are numbered by content instead of creation order |
+| [`references_to`](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck/Configuration.html#references_to-instance_method) | none | columns that point at rows of another table, beyond declared foreign keys |
+| [`generated_keys`](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck/Configuration.html#generated_keys-instance_method) | none | primary keys that are generated, but not auto increment, like UUIDs |
+| [`configure_rspec_metadata!`](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck/Configuration.html#configure_rspec_metadata!-instance_method) | off | lets you tag RSpec examples with `:tape_deck` |
 
-Settings like `exclude_columns` can be called several times, each call adds to the list.
+Settings like `exclude_columns` can be called several times, each call adds to the list. The API documentation of [`TapeDeck::Configuration`](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck/Configuration.html) has the details of each.
 
 ## Patterns
 
@@ -198,3 +198,7 @@ Each tape stores the rules it was recorded with. That's why some changes need re
 | `include_views`: include fewer | keep working, the views not included anymore aren't compared |
 | `include_views`: include more | fail with `TapeDeck::IncompatibleTapeError`, they lack those views. Re-record them. |
 | `keep_new_ids`, `number_by_content`, `references_to`, `generated_keys` | are not affected: a tape is always verified with the numbering rules it was recorded with. New rules apply to tapes recorded afterwards. |
+
+---
+
+Previous: [Getting started](getting-started.md) | Next: [Writing tests](writing-tests.md) | [All chapters](index.md)

@@ -99,3 +99,7 @@ Each tape stores the numbering rules it was recorded with, and is always verifie
 
 - Ids inside texts or JSON, like `"Order 42"` or `{"order_id": 42}`, are not replaced.
 - The rows that exist before the test still need to be the same on every run. Only where the counters stand doesn't matter anymore.
+
+---
+
+Previous: [Choosing what is compared](what-is-compared.md) | Next: [When a tape fails](when-a-tape-fails.md) | [All chapters](index.md)

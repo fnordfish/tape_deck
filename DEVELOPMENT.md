@@ -79,7 +79,16 @@ The database adapters live in the optional `mysql` and `postgres` Gemfile groups
 
 User docs live in `guide/`, one Markdown page per topic, written for readers who aren't fluent in Ruby: plain explanations first, then examples without Ruby shorthand (`["a", "b"]`, not `%w[a b]`), and the results shown, not just the input. The README stays short and links to the guide. The YARD API docs are the reference for Ruby developers.
 
-The guide pages are listed in `.yardopts`, in reading order, so they are published with the API docs, for every version. Links between pages are plain relative `.md` links, which work on GitHub. `yard/markdown_links.rb` rewrites them to YARD's `file.<name>.html` pages. Link to pages, not to headings: GitHub and YARD name heading anchors differently. And don't use `\|` in tables, YARD's Markdown doesn't support it.
+The guide pages are listed in `.yardopts`, in reading order, so they are published with the API docs, for every version. DEVELOPMENT.md is not, it's for contributors, on GitHub. `yard/markdown_links.rb` makes the GitHub-style Markdown work in YARD: it labels pages with their first `# Heading`, rewrites relative `.md` links to YARD's `file.<name>.html` pages (or to GitHub, for existing files that aren't published), and rewrites links into the published API docs to the API of the version being built.
+
+Linking rules:
+
+- Guide pages link to each other with plain relative `.md` links, and end with "Previous" and "Next" links in reading order.
+- Guide pages link to the API with full URLs into `https://fnordfish.github.io/tape_deck/docs/latest/`, like `.../TapeDeck/Configuration.html#exclude_columns-instance_method`. They work on GitHub, and each built version links to its own API.
+- API docs link to the guide with YARD's `{file:guide/configuration.md Configuration}`.
+- Link to pages, not to headings: GitHub and YARD name heading anchors differently. And don't use `\|` in tables, YARD's Markdown doesn't support it.
+
+`bundle exec rake docs:check` builds the docs of the working tree and fails on any link to a missing page or anchor. It's part of the default task, so CI runs it too.
 
 - `bundle exec yard doc` builds the docs into `doc/`, `bundle exec yard server -r` serves them while you edit
 - `bundle exec rake docs:pages` builds `main` and every `v*` tag into `_site/docs/<ref>`, from their commits, not the working tree. It empties `_site` first.

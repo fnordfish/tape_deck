@@ -37,4 +37,8 @@ TapeDeck hands you its configuration as `c`, and the lines between `do` and `end
 
 Names like `SHOP_DB` stand for your own database connections. They're `Sequel::Database` objects, which your test suite most likely creates already.
 
-The API documentation lists every method and option for Ruby developers. This guide covers the same ground with more explanation.
+The [API documentation](https://fnordfish.github.io/tape_deck/docs/latest/TapeDeck.html) lists every method and option for Ruby developers. This guide covers the same ground with more explanation.
+
+---
+
+Next: [Getting started](getting-started.md)

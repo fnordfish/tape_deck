@@ -75,3 +75,7 @@ Rows are matched by their primary key, so a changed row shows up as `updated`, w
 ## Row order doesn't matter
 
 The order of rows on a tape is only for reading. When verifying, both sides are sorted the same way first, so rows don't need to come out in the same order.
+
+---
+
+Previous: [Writing tests](writing-tests.md) | Next: [New rows and ids](new-rows.md) | [All chapters](index.md)

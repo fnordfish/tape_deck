@@ -151,3 +151,7 @@ c.default_record_mode = :verify if ENV["CI"]
 - [Configuration](configuration.md) lists every setting.
 - [Writing tests](writing-tests.md) shows tags on groups, custom tape names, and tapes without RSpec.
 - [Choosing what is compared](what-is-compared.md) helps when tapes fail because of values that change on every run.
+
+---
+
+Previous: [TapeDeck guide](index.md) | Next: [Configuration](configuration.md)

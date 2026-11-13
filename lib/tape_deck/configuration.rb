@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 module TapeDeck
-  # Global settings, set through {TapeDeck.configure}.
+  # Global settings, set through {TapeDeck.configure}. {file:guide/configuration.md Configuration} in the guide explains
+  # every setting, with examples.
   class Configuration
     # Supported values for {#on_schema_change}:
     # [+:error+]  raise {IncompatibleTapeError}
@@ -169,7 +170,8 @@ module TapeDeck
     # levels override outer ones key by key. See {.rspec_tape}.
     #
     # Before the first example runs, the suite fails if tagged examples would share a tape file, for example the same
-    # description in a loop. See {.check_rspec_tape_names}.
+    # description in a loop. See {.check_rspec_tape_names}. {file:guide/writing-tests.md Writing tests} in the guide
+    # shows all of this with examples.
     #
     # @return [void]
     # @example

@@ -12,7 +12,6 @@ on:
       - 'yard/**'
       - README.md
       - CHANGELOG.md
-      - DEVELOPMENT.md
       - LICENSE.txt
       - .yardopts
       - Rakefile
