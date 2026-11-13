@@ -73,6 +73,10 @@ The database adapters live in the optional `mysql` and `postgres` Gemfile groups
 
 ## Docs
 
+User docs live in `guide/`, one Markdown page per topic, written for readers who aren't fluent in Ruby: plain explanations first, then examples without Ruby shorthand (`["a", "b"]`, not `%w[a b]`), and the results shown, not just the input. The README stays short and links to the guide. The YARD API docs are the reference for Ruby developers.
+
+The guide pages are listed in `.yardopts`, in reading order, so they are published with the API docs, for every version. Links between pages are plain relative `.md` links, which work on GitHub. `yard/markdown_links.rb` rewrites them to YARD's `file.<name>.html` pages. Link to pages, not to headings: GitHub and YARD name heading anchors differently. And don't use `\|` in tables, YARD's Markdown doesn't support it.
+
 - `bundle exec yard doc` builds the docs into `doc/`, `bundle exec yard server -r` serves them while you edit
 - `bundle exec rake docs:pages` builds `main` and every `v*` tag into `_site/docs/<ref>`, from their commits, not the working tree. It empties `_site` first.
 

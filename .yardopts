@@ -1,7 +1,16 @@
 --title TapeDeck
 --readme README.md
+--load yard/markdown_links.rb
 lib/**/*.rb
 -
+guide/index.md
+guide/getting-started.md
+guide/configuration.md
+guide/writing-tests.md
+guide/what-is-compared.md
+guide/new-rows.md
+guide/when-a-tape-fails.md
+guide/glossary.md
 CHANGELOG.md
 DEVELOPMENT.md
 LICENSE.txt

@@ -8,6 +8,8 @@ on:
     # Tag pushes ignore this filter, so every release publishes its docs.
     paths:
       - 'lib/**'
+      - 'guide/**'
+      - 'yard/**'
       - README.md
       - CHANGELOG.md
       - DEVELOPMENT.md

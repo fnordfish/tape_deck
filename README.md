@@ -6,7 +6,7 @@ Records what an action changes in your databases, and checks later runs against 
 [![Build Status](https://github.com/fnordfish/tape_deck/actions/workflows/main.yml/badge.svg)][ci]
 [![API Docs](https://img.shields.io/badge/docs-API-blue)][docs]
 
-**[API documentation][docs]**
+**[Guide](guide/index.md)**, **[API documentation][docs]**
 
 You run a command or request against a black-box project. TapeDeck snapshots all configured databases before and after, and stores the row-level diff as a YAML file, a "tape". On later runs the same action must cause the same diff, so you notice when a project changes its behaviour after an update.
 
@@ -36,45 +36,47 @@ And then execute:
 bundle install
 ```
 
-## Usage
+## Quick start
+
+Configure TapeDeck, for example in `spec/support/tape_deck.rb`:
 
 ```ruby
+require "tape_deck"
+
 TapeDeck.configure do |c|
-  c.tape_library_dir = "spec/db_tapes"
+  c.tape_library_dir = File.expand_path("../db_tapes", __dir__)
   c.databases = {"shop" => SHOP_DB, "billing" => BILLING_DB}
-  c.default_record_mode = :once
-  c.exclude_tables "shop.sessions", "*.schema_migrations"
   c.exclude_columns "*.created_at", "*.updated_at"
   c.configure_rspec_metadata!
 end
+```
 
-TapeDeck.use_tape("checkout/creates_order") do
-  client.post("/checkout", ...)
+Tag an example:
+
+```ruby
+RSpec.describe "Checkout" do
+  it "creates an order", :tape_deck do
+    client.post("/checkout", product: "book")
+  end
 end
 ```
 
-The first run writes `spec/db_tapes/checkout/creates_order.yml`:
+The first run records the tape `spec/db_tapes/Checkout/creates_an_order.yml`:
 
 ```yaml
 tape_deck:
   version: 0.1.0
-  exclude_tables: [shop.sessions, "*.schema_migrations"]
   exclude_columns: ["*.created_at", "*.updated_at"]
   databases:
     shop:
-      excluded: [orders.created_at, orders.updated_at, schema_migrations, sessions]
+      excluded: [orders.created_at, orders.updated_at]
     billing:
-      excluded: [invoices.created_at, schema_migrations]
 diff:
-  billing:
-    invoices:
-      inserted:
-      - id: 7
-        order_id: 42
   shop:
     orders:
       inserted:
-      - id: 42
+      - id: new shop.orders 1
+        product: book
         status: new
     stock:
       updated:
@@ -86,112 +88,29 @@ diff:
           - 9
 ```
 
-`tape_deck` holds everything that shaped the tape: the TapeDeck version, the recording rules, the databases the tape watched, and what the rules left out of each.
+Every later run verifies against it, and fails with a diff when the changes differ. New rows get placeholders like `new shop.orders 1` instead of their ids, because ids depend on where the database's counters stand.
 
-Every later run verifies against it and raises `TapeDeck::UnexpectedDiffError` with a diff when the changes differ.
-
-### Record modes
-
-* `:once` records a missing tape, and verifies an existing one (default)
-* `:verify` only verifies. A missing tape raises `TapeDeck::TapeLoadingError`. Use this in CI, with `c.default_record_mode = :verify`.
-* `:overwrite` always records, replacing an existing tape
-
-### RSpec
-
-After `configure_rspec_metadata!`, tag examples with `:tape_deck`. The tape is named after the example's description, unless you pass `tape_name:`. A failing example neither records nor verifies its tape.
-
-Every example needs its own tape name. Before the first example runs, TapeDeck stops the suite if two tagged examples would share a tape, which easily happens in a loop:
+Without RSpec, put a tape around any block:
 
 ```ruby
-%w[paid shipped].each do |status|
-  it "creates an order", :tape_deck do ... end              # both would use "Checkout/creates an order"
-  it "creates an order (#{status})", :tape_deck do ... end  # each gets its own tape
+TapeDeck.use_tape("checkout/creates_order") do
+  client.post("/checkout", product: "book")
 end
 ```
 
-```ruby
-RSpec.describe "Checkout" do
-  it "creates an order", :tape_deck do
-    client.post("/checkout", ...)
-  end
+## Learn more
 
-  it "reserves stock", tape_deck: {databases: %w[shop], tape_name: "checkout/stock"} do
-    client.post("/checkout", ...)
-  end
+The [guide](guide/index.md) explains everything step by step, without assuming you're fluent in Ruby:
 
-  it "marks the order as paid", tape_deck: {only: "shop.orders.status"} do
-    client.post("/checkout", ...)
-  end
-end
-```
+1. [Getting started](guide/getting-started.md)
+2. [Configuration](guide/configuration.md): every setting, what it does, its default
+3. [Writing tests](guide/writing-tests.md): RSpec tags on examples and groups, tape names, options, tapes without RSpec
+4. [Choosing what is compared](guide/what-is-compared.md): excluding, ignoring, views
+5. [New rows and ids](guide/new-rows.md)
+6. [When a tape fails](guide/when-a-tape-fails.md): reading failures, and every error message explained
+7. [Glossary](guide/glossary.md)
 
-### Turning TapeDeck off
-
-To run your suite without TapeDeck, for example to save the time snapshots take:
-
-```ruby
-TapeDeck.turn_off! if ENV["TAPE_DECK"] == "off"
-```
-
-While it's off, `use_tape` only runs its block and tagged examples just run. No database is read, and no tape is read, written or verified. `TapeDeck.turn_on!` turns it back on, `TapeDeck.turned_off { ... }` turns it off for a block.
-
-### Excluding and ignoring
-
-Names are `"<database>.<table>"` and `"<database>.<table>.<column>"`, matched as globs.
-
-* `exclude_tables` / `exclude_columns` (configuration): never recorded. Meant for noise like timestamps. Excluding more later is fine, existing tapes just stop comparing it. Excluding less means re-recording, because the tapes lack that data (`TapeDeck::IncompatibleTapeError`).
-* `only:` / `ignore:` (per use of a tape): recorded, but not compared. Can change without re-recording.
-
-Since a tape stores its rules, verifying also notices schema changes: when the rules now match tables, columns or views that were added or removed since recording, it raises `TapeDeck::IncompatibleTapeError`. Set `c.on_schema_change = :warn` to only print a warning, or `:ignore`.
-
-Primary key columns are never excluded, because rows are matched by them. Tables without a primary key are compared as a multiset of rows.
-
-### New rows
-
-Generated ids depend on where the database's counters stand, and those move with every insert, also with ones a test rolled back. So tapes store placeholders instead, numbered per table in the order the rows were created:
-
-```yaml
-orders:
-  inserted:
-  - id: new shop.orders 1
-items:
-  inserted:
-  - id: new shop.items 1
-    order_id: new shop.orders 1
-```
-
-Declared foreign keys to new rows get the same placeholder. Ids of rows that existed before stay as they are. To keep the real ids of a table, use `c.keep_new_ids "shop.audit_log"`.
-
-Numbering in creation order means that creating the same rows in a different order fails verification. That's what you want if the order matters, for example when a CSV import must keep the file's order. If it doesn't, number those tables by content instead:
-
-```ruby
-c.number_by_content "shop.imported_products", "shop.imported_prices"
-```
-
-Rows are then sorted by their content, and referenced tables are numbered first, so a row's references count as part of its content. Rows with identical content are numbered in creation order.
-
-References across databases, and columns without a foreign key, need to be named. Keys that are generated, but not auto increment, like UUIDs, too:
-
-```ruby
-c.references_to "shop.orders", "billing.invoices.order_id", "*.last_order_id"
-c.generated_keys "shop.tokens.id"
-```
-
-UUIDs have no creation order, so those rows are always numbered by content.
-
-These numbering rules are stored on each tape, and verifying uses the tape's rules, not your current configuration. Changing them only affects tapes you record afterwards.
-
-### Views
-
-Views are left out, because the changes of the tables behind them are on the tape anyway. Include them to also notice a changed view definition:
-
-```ruby
-c.include_views "shop.order_totals", "billing.*"
-```
-
-Included views are read in full on every snapshot, and compared as a multiset of rows, because they have no primary key. `exclude_columns` applies to their columns.
-
-### Databases
+## Databases
 
 | Database | Tested with | Unchanged tables |
 | --- | --- | --- |
@@ -203,14 +122,11 @@ Telling unchanged tables apart still scans them on the server, but saves reading
 
 PostgreSQL tables are seen through the search path, like Sequel's `db.tables` does, usually the `public` schema. Tables in other schemas are not recorded.
 
-### Things to know
+## Things to know
 
 * Rows that exist before the action end up on the tape when it changes them, so your databases need the same starting rows on every run. Where the id counters stand doesn't matter.
 * Anything the action does asynchronously must finish inside the block, or only part of it is captured.
-* When verifying, a tape watches the databases it was recorded with. `databases:` can narrow that down, but can't add a database the tape has no recording of.
 * Until 1.0, a minor version (0.2, 0.3, ...) may change the tape format. The CHANGELOG says when tapes need re-recording.
-
-The [API docs][docs] have the full story.
 
 ## Development
 

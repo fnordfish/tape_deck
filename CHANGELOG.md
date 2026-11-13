@@ -4,6 +4,7 @@
 
 - Breaking: in the RSpec tag, `tape_name:` renames only the level it is set on, so an example's `tape_name: "x"` inside `describe "Checkout"` is the tape `Checkout/x`. A leading `/` gives the complete name, like `tape_name: "/orders/create"`.
 - Change: `tape_deck:` options set on example groups are merged down to their examples, key by key. Before, an example's own options replaced all of its groups' options.
+- Add: a user guide in `guide/`, published with the API docs: getting started, every setting, writing tests, choosing what is compared, new rows and ids, every error message explained, and a glossary. The README is short now and links to it.
 - Fix: a tape that didn't match crashed with `NameError: uninitialized constant RSpec` outside of RSpec, like in Minitest or a script, instead of showing the diff
 - Add: `TapeDeck.turn_off!`, `turn_on!`, `turned_on?` and `turned_off { }`, to run without TapeDeck. While it's off, `use_tape` only runs its block and tagged RSpec examples just run, without touching a database or a tape.
 
