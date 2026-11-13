@@ -58,11 +58,11 @@ RSpec.describe TapeDeck::Configuration do
     it "passes options and a custom tape name" do
       orders = db[:orders]
       run_group do
-        it("creates an order", tape_deck: {tape_name: "orders/create", record: :overwrite}) { orders.insert(status: "a") }
+        it("creates an order", tape_deck: {tape_name: "/orders/create", record: :overwrite}) { orders.insert(status: "a") }
       end
       reset_tables(db, :orders)
       run_group do
-        it("creates an order", tape_deck: {tape_name: "orders/create", record: :overwrite}) { orders.insert(status: "b") }
+        it("creates an order", tape_deck: {tape_name: "/orders/create", record: :overwrite}) { orders.insert(status: "b") }
       end
 
       expect(tape("orders/create").dig("shop", "orders", "inserted", 0, "status")).to eq("b")
@@ -140,9 +140,58 @@ RSpec.describe TapeDeck::Configuration do
         check do
           it("creates an order", :tape_deck) {}
           it("creates_an_order", :tape_deck) {}
-          it("anything", tape_deck: {tape_name: "Checkout/creates an order"}) {}
+          it("anything", tape_deck: {tape_name: "/Checkout/creates an order"}) {}
         end
       }.to raise_error(TapeDeck::Error, /Checkout\/creates_an_order.yml:\n(.*\n){2}.*"Checkout\/creates an order"\z/)
+    end
+  end
+
+  describe ".rspec_tape" do
+    # Defines examples in a sandbox, without running them, and returns their tape names and options
+    def tapes(description, metadata = {}, &definition)
+      RSpec::Core::Sandbox.sandboxed do |config|
+        config.expose_dsl_globally = false
+        examples = RSpec.describe(description, metadata, &definition).descendants.flat_map(&:examples)
+        examples.to_h { [_1.description, described_class.rspec_tape(_1)] }
+      end
+    end
+
+    it "renames only the level tape_name is set on" do
+      tapes = tapes("A") do
+        context "b", tape_deck: {tape_name: "FOO"} do
+          context "c" do
+            it("bar", :tape_deck) {}
+            it("baz", tape_deck: {tape_name: "qux"}) {}
+          end
+        end
+      end
+
+      expect(tapes.transform_values(&:first)).to eq("bar" => "A/FOO/c/bar", "baz" => "A/FOO/c/qux")
+    end
+
+    it "replaces the whole name up to its level with a leading /" do
+      tapes = tapes("Checkout") do
+        context "paying", tape_deck: {tape_name: "/payments"} do
+          it("by card", :tape_deck) {}
+        end
+        it("creates an order", tape_deck: {tape_name: "/orders/create"}) {}
+      end
+
+      expect(tapes.transform_values(&:first)).to eq("by card" => "payments/by card", "creates an order" => "orders/create")
+    end
+
+    it "merges options from the outermost group down to the example, inner ones winning" do
+      tapes = tapes("Checkout", tape_deck: {databases: %w[shop], only: "shop.orders"}) do
+        context "paying", tape_deck: {ignore: "shop.orders.note"} do
+          it("by card", tape_deck: {only: "shop.payments", record: :overwrite}) {}
+          it("by invoice", :tape_deck) {}
+        end
+      end
+
+      expect(tapes.transform_values(&:last)).to eq(
+        "by card" => {databases: %w[shop], only: "shop.payments", ignore: "shop.orders.note", record: :overwrite},
+        "by invoice" => {databases: %w[shop], only: "shop.orders", ignore: "shop.orders.note"}
+      )
     end
   end
 end

@@ -201,8 +201,8 @@ require_relative "tape_deck/recorder"
 #       client.post("/checkout", ...)
 #     end
 #
-#     # only the shop database, custom tape name
-#     it "reserves stock", tape_deck: { databases: %w[shop], tape_name: "checkout/stock" } do
+#     # only the shop database, tape "Checkout/stock"
+#     it "reserves stock", tape_deck: { databases: %w[shop], tape_name: "stock" } do
 #       client.post("/checkout", ...)
 #     end
 #

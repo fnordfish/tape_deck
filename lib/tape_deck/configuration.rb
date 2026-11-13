@@ -160,17 +160,26 @@ module TapeDeck
       (@reference_columns[table.to_s] ||= []).concat(patterns.map(&:to_s))
     end
 
-    # Wraps RSpec examples tagged +:tape_deck+ in a tape. The tape is named after the example's description hierarchy
-    # unless +tape_name:+ is given. When the example fails, the tape is neither recorded nor verified.
+    # Wraps RSpec examples tagged +:tape_deck+ in a tape, also all examples in a tagged group, each in its own tape.
+    # The tape covers the whole example, including its +before(:each)+ and +after(:each)+ hooks, so cleaning up in an
+    # +after+ hook is recorded too. When the example fails, the tape is neither recorded nor verified.
+    #
+    # A tape is named after the descriptions of the example and its groups. +tape_name:+ renames the level it is set
+    # on, a leading +/+ replaces the name up to that level. Other options set on a group apply to its examples, inner
+    # levels override outer ones key by key. See {.rspec_tape}.
     #
     # Before the first example runs, the suite fails if tagged examples would share a tape file, for example the same
     # description in a loop. See {.check_rspec_tape_names}.
     #
     # @return [void]
     # @example
-    #   it "creates an order", :tape_deck do ... end
-    #   it "creates an order", tape_deck: { record: :overwrite, tape_name: "orders/create" } do ... end
-    #   it "creates an order", tape_deck: { databases: %w[shop] } do ... end
+    #   describe "Checkout", tape_deck: { databases: %w[shop] } do    # every example gets a tape of the shop database
+    #     it "creates an order" do ... end                            # tape "Checkout/creates an order"
+    #     it "pays", tape_deck: { tape_name: "payment" } do ... end   # tape "Checkout/payment"
+    #     it "bills", tape_deck: { tape_name: "/billing/invoice" } do # tape "billing/invoice"
+    #       ...
+    #     end
+    #   end
     def configure_rspec_metadata!
       ::RSpec.configure do |config|
         # All examples are loaded by now, so examples sharing a tape by mistake fail the run before anything is recorded
@@ -187,13 +196,32 @@ module TapeDeck
       end
     end
 
+    # Every level, the example groups from the outside in and then the example, can set +tape_deck:+ options. Inner
+    # levels override outer ones key by key. +tape_name:+ is the exception: it renames only the level it is set on,
+    # and with a leading +/+ replaces the whole name up to that level.
+    #
     # @param example [RSpec::Core::Example] an example tagged +:tape_deck+
     # @return [Array(String, Hash)] its tape name, and the options for {TapeDeck.insert_tape}
     # @api private
     def self.rspec_tape(example)
-      options = Hash.try_convert(example.metadata[:tape_deck]) || {} # a bare :tape_deck tag is `true`
-      name = options[:tape_name] || rspec_tape_name(example)
-      [name, options.except(:tape_name)]
+      segments = []
+      options = {}
+      inherited = nil
+      [*example.example_group.parent_groups.reverse, example].each do |level|
+        value = level.metadata[:tape_deck]
+        # RSpec passes a level's value on as the same object, so a new object is what this level set itself. A bare
+        # :tape_deck tag is `true`, which sets no options.
+        own = Hash.try_convert(value) unless value.equal?(inherited)
+        inherited = value
+        tape_name = own&.fetch(:tape_name, nil)&.to_s
+        if tape_name&.start_with?("/")
+          segments = [tape_name.delete_prefix("/")]
+        else
+          segments << (tape_name || level.description)
+        end
+        options.merge!(own.except(:tape_name)) if own
+      end
+      [segments.join("/"), options]
     end
 
     # Examples that share a tape file would record and verify each other's changes, for example the same description
@@ -213,14 +241,6 @@ module TapeDeck
         "  #{file_name}:\n#{lines.join("\n")}"
       end
       raise Error, "TapeDeck: examples share a tape. Give each its own description or tape_name:\n#{details.join("\n")}"
-    end
-
-    # @param example [RSpec::Core::Example]
-    # @return [String] the example's description hierarchy, e.g. +"Checkout/creates an order"+
-    # @api private
-    def self.rspec_tape_name(example)
-      group_descriptions = example.example_group.parent_groups.reverse.map(&:description)
-      [*group_descriptions, example.description].join("/")
     end
   end
 end
