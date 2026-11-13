@@ -163,6 +163,9 @@ module TapeDeck
     # Wraps RSpec examples tagged +:tape_deck+ in a tape. The tape is named after the example's description hierarchy
     # unless +tape_name:+ is given. When the example fails, the tape is neither recorded nor verified.
     #
+    # Before the first example runs, the suite fails if tagged examples would share a tape file, for example the same
+    # description in a loop. See {.check_rspec_tape_names}.
+    #
     # @return [void]
     # @example
     #   it "creates an order", :tape_deck do ... end
@@ -170,16 +173,46 @@ module TapeDeck
     #   it "creates an order", tape_deck: { databases: %w[shop] } do ... end
     def configure_rspec_metadata!
       ::RSpec.configure do |config|
-        config.around(:each, :tape_deck) do |example|
-          options = Hash.try_convert(example.metadata[:tape_deck]) || {} # a bare :tape_deck tag is `true`
-          name = options[:tape_name] || Configuration.rspec_tape_name(example)
+        # All examples are loaded by now, so examples sharing a tape by mistake fail the run before anything is recorded
+        config.before(:suite) { Configuration.check_rspec_tape_names(::RSpec.world.all_examples) }
 
-          TapeDeck.insert_tape(name, **options.except(:tape_name))
+        config.around(:each, :tape_deck) do |example|
+          name, options = Configuration.rspec_tape(example)
+
+          TapeDeck.insert_tape(name, **options)
           example.run
           example_failed = !example.exception.nil?
           TapeDeck.eject_tape(discard: example_failed)
         end
       end
+    end
+
+    # @param example [RSpec::Core::Example] an example tagged +:tape_deck+
+    # @return [Array(String, Hash)] its tape name, and the options for {TapeDeck.insert_tape}
+    # @api private
+    def self.rspec_tape(example)
+      options = Hash.try_convert(example.metadata[:tape_deck]) || {} # a bare :tape_deck tag is `true`
+      name = options[:tape_name] || rspec_tape_name(example)
+      [name, options.except(:tape_name)]
+    end
+
+    # Examples that share a tape file would record and verify each other's changes, for example the same description
+    # in a loop. Explicit +tape_name:+ options count too.
+    #
+    # @param examples [Array<RSpec::Core::Example>] all loaded examples
+    # @return [void]
+    # @raise [Error] if tagged examples share a tape file, listing them
+    # @api private
+    def self.check_rspec_tape_names(examples)
+      tagged = examples.select { _1.metadata[:tape_deck] }
+      shared = tagged.group_by { Tape.file_name_for(rspec_tape(_1).first) }.select { |_, group| group.size > 1 }
+      return if shared.empty?
+
+      details = shared.map do |file_name, group|
+        lines = group.map { "    #{_1.id} #{rspec_tape(_1).first.inspect}" }
+        "  #{file_name}:\n#{lines.join("\n")}"
+      end
+      raise Error, "TapeDeck: examples share a tape. Give each its own description or tape_name:\n#{details.join("\n")}"
     end
 
     # @param example [RSpec::Core::Example]

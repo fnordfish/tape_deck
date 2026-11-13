@@ -92,4 +92,47 @@ RSpec.describe TapeDeck::Configuration do
       expect(failure.message).to match(/^-\s+status: new$/).and match(/^\+\s+status: paid$/)
     end
   end
+
+  describe ".check_rspec_tape_names" do
+    # Defines examples in a sandbox, without running them
+    def examples(&definition)
+      RSpec::Core::Sandbox.sandboxed do |config|
+        config.expose_dsl_globally = false
+        RSpec.describe("Checkout", &definition).descendants.flat_map(&:examples)
+      end
+    end
+
+    def check(&definition) = described_class.check_rspec_tape_names(examples(&definition))
+
+    it "accepts examples with their own tapes" do
+      expect {
+        check do
+          %w[paid shipped].each { |status| it("creates an order (#{status})", :tape_deck) {} }
+          it("creates an order", tape_deck: {tape_name: "orders/create"}) {}
+          it("creates an order") {} # not tagged
+        end
+      }.not_to raise_error
+    end
+
+    it "lists examples that share a tape, like the same description in a loop" do
+      expect {
+        check { %w[paid shipped].each { it("creates an order", :tape_deck) {} } }
+      }.to raise_error(TapeDeck::Error, <<~MESSAGE.chomp)
+        TapeDeck: examples share a tape. Give each its own description or tape_name:
+          Checkout/creates_an_order.yml:
+            ./spec/tape_deck/configuration_spec.rb[1:1] "Checkout/creates an order"
+            ./spec/tape_deck/configuration_spec.rb[1:2] "Checkout/creates an order"
+      MESSAGE
+    end
+
+    it "notices names that only share a file name, and explicit tape names" do
+      expect {
+        check do
+          it("creates an order", :tape_deck) {}
+          it("creates_an_order", :tape_deck) {}
+          it("anything", tape_deck: {tape_name: "Checkout/creates an order"}) {}
+        end
+      }.to raise_error(TapeDeck::Error, /Checkout\/creates_an_order.yml:\n(.*\n){2}.*"Checkout\/creates an order"\z/)
+    end
+  end
 end

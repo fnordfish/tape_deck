@@ -22,6 +22,7 @@ Decisions made on purpose. Please don't undo them without discussing first:
 - **Record modes** are `:once`, `:verify`, `:overwrite`. Renamed from VCR's `:once`, `:none`, `:all`.
 - **Vocabulary.** "record", "verify", "discard", "capture". Not "playback", not "compare" as a mode name.
 - **Errors** live directly under `TapeDeck` (`Error`, `TapeLoadingError`, `IncompatibleTapeError`, `UnexpectedDiffError`), not in an `Errors` module.
+- **Tape names come from example descriptions, never from line numbers or example ids.** Those change when examples are added above, which would silently orphan tapes. Instead, the RSpec hook fails the suite in `before(:suite)` when tagged examples share a tape file (`Configuration.check_rspec_tape_names`), using `RSpec.world.all_examples`, which is internal but long stable.
 - **Manual `insert_tape` / `eject_tape` work like `File.open` without a block**: no automatic tear down. The caller discards a tape whose action failed, and ejects outer tapes when an inner eject raises. `use_tape` and the RSpec tag do both.
 - **Options are keywords.** Unknown keywords raise.
 - **A tape stores everything that shapes its content**, in its `tape_deck` section: the TapeDeck version that recorded it, every recording rule (exclude, include, numbering), the watched databases, and the resolved names the exclude and include rules matched in each. A tape must be understandable and verifiable on its own. Per-use options (`only:`, `ignore:`) and behavior settings (record mode, `on_schema_change`) are not stored, they don't shape the content.

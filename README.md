@@ -103,6 +103,15 @@ Every later run verifies against it and raises `TapeDeck::UnexpectedDiffError` w
 
 After `configure_rspec_metadata!`, tag examples with `:tape_deck`. The tape is named after the example's description, unless you pass `tape_name:`. A failing example neither records nor verifies its tape.
 
+Every example needs its own tape name. Before the first example runs, TapeDeck stops the suite if two tagged examples would share a tape, which easily happens in a loop:
+
+```ruby
+%w[paid shipped].each do |status|
+  it "creates an order", :tape_deck do ... end              # both would use "Checkout/creates an order"
+  it "creates an order (#{status})", :tape_deck do ... end  # each gets its own tape
+end
+```
+
 ```ruby
 RSpec.describe "Checkout" do
   it "creates an order", :tape_deck do

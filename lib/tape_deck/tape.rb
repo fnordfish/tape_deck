@@ -100,9 +100,13 @@ module TapeDeck
     end
 
     # @return [String] the tape name with {UNSAFE_FILE_NAME_CHARS} replaced, plus +.yml+
-    def file_name
-      "#{name.gsub(UNSAFE_FILE_NAME_CHARS, "_")}.yml"
-    end
+    def file_name = self.class.file_name_for(name)
+
+    # Different tape names can share a file name, e.g. +"an order"+ and +"an_order"+.
+    #
+    # @param name [String] tape name
+    # @return [String] the name with {UNSAFE_FILE_NAME_CHARS} replaced, plus +.yml+
+    def self.file_name_for(name) = "#{name.to_s.gsub(UNSAFE_FILE_NAME_CHARS, "_")}.yml"
 
     # Reads the tape file once, later calls return the same content.
     #
