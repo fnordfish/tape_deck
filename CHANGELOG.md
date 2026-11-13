@@ -2,6 +2,7 @@
 
 ## 0.2.0.dev
 
+- Add: the RSpec integration works with RSpec 4.0.0.beta1, tested in CI next to RSpec 3
 - Breaking: in the RSpec tag, `tape_name:` renames only the level it is set on, so an example's `tape_name: "x"` inside `describe "Checkout"` is the tape `Checkout/x`. A leading `/` gives the complete name, like `tape_name: "/orders/create"`.
 - Change: `tape_deck:` options set on example groups are merged down to their examples, key by key. Before, an example's own options replaced all of its groups' options.
 - Add: a user guide in `guide/`, published with the API docs: getting started, every setting, writing tests, choosing what is compared, new rows and ids, every error message explained, and a glossary. The README is short now and links to it.

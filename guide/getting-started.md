@@ -6,7 +6,7 @@ This chapter sets TapeDeck up in an RSpec test suite, records a first tape, and 
 
 - Ruby 3.2 or newer
 - A test suite that connects to your databases with [Sequel](https://sequel.jeremyevans.net). TapeDeck works with MySQL, MariaDB, PostgreSQL and SQLite.
-- RSpec, for the setup shown here. Other test frameworks work too, see [Writing tests](writing-tests.md).
+- RSpec 3 or 4, for the setup shown here. Other test frameworks work too, see [Writing tests](writing-tests.md).
 
 ## 1. Install the gem
 

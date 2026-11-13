@@ -2,7 +2,7 @@
 
 # Runs against a real PostgreSQL server. Set TAPE_DECK_POSTGRES_URL to a server URL without a database, e.g.
 # "postgres://postgres:tape_deck@postgres". See .devcontainer/compose.yml.
-RSpec.describe "PostgreSQL", :postgres do
+RSpec.describe "PostgreSQL", server: "postgres" do
   def server_url = ENV.fetch("TAPE_DECK_POSTGRES_URL")
 
   def create_database(server, name)

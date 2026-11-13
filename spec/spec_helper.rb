@@ -15,18 +15,18 @@ RSpec.configure do |config|
   # A filter that matches nothing must not pass silently
   config.fail_if_no_examples = true
 
-  # Disable RSpec exposing methods globally on `Module` and `main`
-  config.disable_monkey_patching!
-
-  config.expect_with :rspec do |c|
-    c.syntax = :expect
+  # Disable RSpec exposing methods globally on `Module` and `main`, and the `should` syntax. RSpec 4 has neither.
+  if config.respond_to?(:disable_monkey_patching!)
+    config.disable_monkey_patching!
+    config.expect_with(:rspec) { |c| c.syntax = :expect }
   end
 
   config.include Databases
 
   # The MySQL integration specs need a server, see .devcontainer/compose.yml
-  config.filter_run_excluding :mysql unless ENV["TAPE_DECK_MYSQL_URL"]
-  config.filter_run_excluding :postgres unless ENV["TAPE_DECK_POSTGRES_URL"]
+  # Specs for a database server are tagged `server: "mysql"` or `server: "postgres"`, and only run when its URL is set.
+  # One key, because RSpec 4 only excludes examples that match all exclusion filters.
+  config.filter_run_excluding server: ->(server) { !ENV["TAPE_DECK_#{server.upcase}_URL"] }
 
   config.around do |example|
     Dir.mktmpdir("tape_deck") do |dir|

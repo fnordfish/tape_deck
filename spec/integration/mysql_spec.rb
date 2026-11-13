@@ -3,7 +3,7 @@
 # Runs against a real MySQL server. Set TAPE_DECK_MYSQL_URL to a server URL without a database, e.g.
 # "mysql2://root:tape_deck@mysql", "trilogy://root:tape_deck@mysql" or "mysql://root:tape_deck@mysql" (ruby-mysql).
 # See .devcontainer/compose.yml.
-RSpec.describe "MySQL", :mysql do
+RSpec.describe "MySQL", server: "mysql" do
   def server_url = ENV.fetch("TAPE_DECK_MYSQL_URL")
 
   def create_database(server, name) = server.run("CREATE DATABASE IF NOT EXISTS #{name}")

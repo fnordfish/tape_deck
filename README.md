@@ -12,7 +12,7 @@ You run a command or request against a black-box project. TapeDeck snapshots all
 
 API, naming and flow are modelled on [VCR](https://github.com/vcr/vcr), with one big difference: a tape is never played back. The action always runs for real, and the tape is only what the result is compared against.
 
-Works with [Sequel](https://sequel.jeremyevans.net) and MySQL, MariaDB, PostgreSQL or SQLite. Needs Ruby 3.2 or newer.
+Works with [Sequel](https://sequel.jeremyevans.net) and MySQL, MariaDB, PostgreSQL or SQLite. Needs Ruby 3.2 or newer. The RSpec integration works with RSpec 3 and RSpec 4.0.0.beta1.
 
 ## Installation
 

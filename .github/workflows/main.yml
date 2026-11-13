@@ -13,9 +13,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Ruby ${{ matrix.ruby }}
-    # head is Ruby's unreleased development version, its failures don't fail the build
-    continue-on-error: ${{ matrix.ruby == 'head' }}
+    name: Ruby ${{ matrix.ruby }}, RSpec ${{ matrix.rspec }}
+    # Ruby head and RSpec betas are unreleased, their failures don't fail the build
+    continue-on-error: ${{ matrix.ruby == 'head' || contains(matrix.rspec, 'beta') }}
     strategy:
       fail-fast: false
       matrix:
@@ -25,6 +25,15 @@ jobs:
           - '3.4'
           - '4.0'
           - head
+        rspec:
+          - '3'
+        include:
+          - ruby: '3.2'
+            rspec: '4.0.0.beta1'
+          - ruby: '4.0'
+            rspec: '4.0.0.beta1'
+    env:
+      RSPEC_VERSION: ${{ matrix.rspec == '3' && '~> 3.0' || matrix.rspec }}
 
     steps:
       - uses: actions/checkout@v6

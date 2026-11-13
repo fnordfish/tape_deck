@@ -33,7 +33,7 @@ RSpec.describe TapeDeck::Configuration do
     # @return [Exception, nil] the exception of the first example that failed
     def run_group(&definition)
       RSpec::Core::Sandbox.sandboxed do |config|
-        config.expose_dsl_globally = false
+        config.expose_dsl_globally = false if config.respond_to?(:expose_dsl_globally=) # RSpec 4 never exposes it
         TapeDeck.configuration.configure_rspec_metadata!
         group = RSpec.describe("Checkout", &definition)
         group.run(RSpec::Core::NullReporter)
@@ -107,7 +107,7 @@ RSpec.describe TapeDeck::Configuration do
     # Defines examples in a sandbox, without running them
     def examples(&definition)
       RSpec::Core::Sandbox.sandboxed do |config|
-        config.expose_dsl_globally = false
+        config.expose_dsl_globally = false if config.respond_to?(:expose_dsl_globally=) # RSpec 4 never exposes it
         RSpec.describe("Checkout", &definition).descendants.flat_map(&:examples)
       end
     end
@@ -150,7 +150,7 @@ RSpec.describe TapeDeck::Configuration do
     # Defines examples in a sandbox, without running them, and returns their tape names and options
     def tapes(description, metadata = {}, &definition)
       RSpec::Core::Sandbox.sandboxed do |config|
-        config.expose_dsl_globally = false
+        config.expose_dsl_globally = false if config.respond_to?(:expose_dsl_globally=) # RSpec 4 never exposes it
         examples = RSpec.describe(description, metadata, &definition).descendants.flat_map(&:examples)
         examples.to_h { [_1.description, described_class.rspec_tape(_1)] }
       end

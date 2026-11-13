@@ -8,7 +8,8 @@ gemspec
 gem "irb"
 gem "rake", "~> 13.0"
 
-gem "rspec", "~> 3.0"
+# RSPEC_VERSION tests with another RSpec, e.g. RSPEC_VERSION=4.0.0.beta1, see DEVELOPMENT.md
+gem "rspec", ENV.fetch("RSPEC_VERSION", "~> 3.0")
 
 gem "standard", "~> 1.3"
 

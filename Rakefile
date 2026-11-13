@@ -9,9 +9,9 @@ MYSQL_ADAPTERS = {"mysql2" => "mysql2", "trilogy" => "trilogy", "ruby-mysql" => 
 namespace :spec do
   desc "Run the specs that need no database server, on SQLite"
   RSpec::Core::RakeTask.new(:sqlite) do |t|
-    # Quoted, because the command runs through a shell, and where a "mysql" user exists (GitHub's runners), ~mysql
-    # expands to its home directory
-    t.rspec_opts = "--tag '~mysql' --tag '~postgres'"
+    # Quoted, because the command runs through a shell, where ~name expands to the home directory of a user with that
+    # name, if there is one. GitHub's runners have a "mysql" user, for example.
+    t.rspec_opts = "--tag '~server'"
   end
 
   MYSQL_ADAPTERS.each do |gem_name, adapter|
@@ -19,14 +19,14 @@ namespace :spec do
     task gem_name do
       server_url = ENV.fetch("TAPE_DECK_MYSQL_URL") { abort "Set TAPE_DECK_MYSQL_URL, see DEVELOPMENT.md" }
       adapter_url = server_url.sub(%r{\A\w+://}, "#{adapter}://")
-      sh({"TAPE_DECK_MYSQL_URL" => adapter_url}, "rspec", "--tag", "mysql")
+      sh({"TAPE_DECK_MYSQL_URL" => adapter_url}, "rspec", "--tag", "server:mysql")
     end
   end
 
   desc "Run the PostgreSQL specs, needs TAPE_DECK_POSTGRES_URL"
   task :postgres do
     ENV.fetch("TAPE_DECK_POSTGRES_URL") { abort "Set TAPE_DECK_POSTGRES_URL, see DEVELOPMENT.md" }
-    sh "rspec", "--tag", "postgres"
+    sh "rspec", "--tag", "server:postgres"
   end
 end
 
